@@ -1,0 +1,170 @@
+VoltOptimizer - Hiper-Parametre Deney Raporu
+============================================================
+
+Deney: Temel_Model
+  MSE : 11.116164
+  MAE : 2.835578
+  R²  : 0.9837
+  Konfig: {'num_features': 5, 'cnn_filters': [32, 64], 'cnn_kernel_size': 3, 'gru_hidden_size': 128, 'gru_num_layers': 2, 'fc_hidden': 64, 'dropout': 0.3}
+
+Deney: Yüksek_LR
+  MSE : 9.770874
+  MAE : 2.612280
+  R²  : 0.9857
+  Konfig: {'num_features': 5, 'cnn_filters': [32, 64], 'cnn_kernel_size': 3, 'gru_hidden_size': 128, 'gru_num_layers': 2, 'fc_hidden': 64, 'dropout': 0.3}
+
+Deney: Düşük_LR
+  MSE : 37.842274
+  MAE : 4.949749
+  R²  : 0.9445
+  Konfig: {'num_features': 5, 'cnn_filters': [32, 64], 'cnn_kernel_size': 3, 'gru_hidden_size': 128, 'gru_num_layers': 2, 'fc_hidden': 64, 'dropout': 0.3}
+
+Deney: Büyük_GRU
+  MSE : 9.645364
+  MAE : 2.541220
+  R²  : 0.9859
+  Konfig: {'num_features': 5, 'cnn_filters': [32, 64], 'cnn_kernel_size': 3, 'gru_hidden_size': 256, 'gru_num_layers': 3, 'fc_hidden': 64, 'dropout': 0.3}
+
+Deney: Derin_CNN
+  MSE : 5.724870
+  MAE : 1.983433
+  R²  : 0.9916
+  Konfig: {'num_features': 5, 'cnn_filters': [32, 64, 128], 'cnn_kernel_size': 3, 'gru_hidden_size': 128, 'gru_num_layers': 2, 'fc_hidden': 64, 'dropout': 0.3}
+
+
+Epoch Bazlı Eğitim Logu:
+--------------------------------------------------------------------------------
+  Epoch   1 | Train MSE: 0.055596 | Val MSE: 0.031351 | Train MAE: 0.192894 | Val MAE: 0.134754 | LR: 0.001000
+  Epoch   2 | Train MSE: 0.020839 | Val MSE: 0.007275 | Train MAE: 0.117241 | Val MAE: 0.076666 | LR: 0.001000
+  Epoch   3 | Train MSE: 0.009104 | Val MSE: 0.007225 | Train MAE: 0.077863 | Val MAE: 0.073139 | LR: 0.001000
+  Epoch   4 | Train MSE: 0.007129 | Val MSE: 0.001810 | Train MAE: 0.068141 | Val MAE: 0.033961 | LR: 0.001000
+  Epoch   5 | Train MSE: 0.008036 | Val MSE: 0.003101 | Train MAE: 0.072279 | Val MAE: 0.045373 | LR: 0.001000
+  Epoch   6 | Train MSE: 0.009478 | Val MSE: 0.002775 | Train MAE: 0.081162 | Val MAE: 0.043569 | LR: 0.001000
+  Epoch   7 | Train MSE: 0.008135 | Val MSE: 0.002599 | Train MAE: 0.075550 | Val MAE: 0.044009 | LR: 0.001000
+  Epoch   8 | Train MSE: 0.004888 | Val MSE: 0.001287 | Train MAE: 0.055473 | Val MAE: 0.028239 | LR: 0.001000
+  Epoch   9 | Train MSE: 0.007448 | Val MSE: 0.002270 | Train MAE: 0.067198 | Val MAE: 0.041260 | LR: 0.001000
+  Epoch  10 | Train MSE: 0.004938 | Val MSE: 0.001095 | Train MAE: 0.055121 | Val MAE: 0.025066 | LR: 0.001000
+  Epoch  11 | Train MSE: 0.004335 | Val MSE: 0.001035 | Train MAE: 0.052511 | Val MAE: 0.025654 | LR: 0.001000
+  Epoch  12 | Train MSE: 0.004574 | Val MSE: 0.000939 | Train MAE: 0.052803 | Val MAE: 0.023961 | LR: 0.001000
+  Epoch  13 | Train MSE: 0.004095 | Val MSE: 0.000778 | Train MAE: 0.052552 | Val MAE: 0.022097 | LR: 0.001000
+  Epoch  14 | Train MSE: 0.003620 | Val MSE: 0.001118 | Train MAE: 0.048092 | Val MAE: 0.026706 | LR: 0.001000
+  Epoch  15 | Train MSE: 0.003161 | Val MSE: 0.000626 | Train MAE: 0.044705 | Val MAE: 0.019526 | LR: 0.001000
+  Epoch  16 | Train MSE: 0.003135 | Val MSE: 0.000784 | Train MAE: 0.045035 | Val MAE: 0.022524 | LR: 0.000500
+  Epoch  17 | Train MSE: 0.003505 | Val MSE: 0.000722 | Train MAE: 0.046590 | Val MAE: 0.021738 | LR: 0.000500
+  Epoch  18 | Train MSE: 0.004008 | Val MSE: 0.000757 | Train MAE: 0.050194 | Val MAE: 0.021957 | LR: 0.000500
+  Epoch  19 | Train MSE: 0.003054 | Val MSE: 0.000627 | Train MAE: 0.044993 | Val MAE: 0.019079 | LR: 0.000500
+  Epoch  20 | Train MSE: 0.004471 | Val MSE: 0.000781 | Train MAE: 0.053034 | Val MAE: 0.022691 | LR: 0.000500
+  Epoch  21 | Train MSE: 0.004506 | Val MSE: 0.000680 | Train MAE: 0.051431 | Val MAE: 0.021952 | LR: 0.000500
+  Epoch  22 | Train MSE: 0.001895 | Val MSE: 0.000665 | Train MAE: 0.035475 | Val MAE: 0.021673 | LR: 0.000500
+  Epoch  23 | Train MSE: 0.002644 | Val MSE: 0.000647 | Train MAE: 0.041006 | Val MAE: 0.019560 | LR: 0.000500
+  Epoch  24 | Train MSE: 0.003630 | Val MSE: 0.000663 | Train MAE: 0.048216 | Val MAE: 0.021337 | LR: 0.000500
+  Epoch  25 | Train MSE: 0.002437 | Val MSE: 0.000790 | Train MAE: 0.038163 | Val MAE: 0.023135 | LR: 0.000500
+  Epoch   1 | Train MSE: 0.034648 | Val MSE: 0.007032 | Train MAE: 0.149932 | Val MAE: 0.066531 | LR: 0.005000
+  Epoch   2 | Train MSE: 0.010032 | Val MSE: 0.010966 | Train MAE: 0.081283 | Val MAE: 0.090614 | LR: 0.005000
+  Epoch   3 | Train MSE: 0.012574 | Val MSE: 0.002597 | Train MAE: 0.093548 | Val MAE: 0.042621 | LR: 0.005000
+  Epoch   4 | Train MSE: 0.007031 | Val MSE: 0.001782 | Train MAE: 0.070536 | Val MAE: 0.032713 | LR: 0.005000
+  Epoch   5 | Train MSE: 0.002737 | Val MSE: 0.002807 | Train MAE: 0.041090 | Val MAE: 0.046011 | LR: 0.005000
+  Epoch   6 | Train MSE: 0.005496 | Val MSE: 0.001623 | Train MAE: 0.060970 | Val MAE: 0.033214 | LR: 0.005000
+  Epoch   7 | Train MSE: 0.003196 | Val MSE: 0.001077 | Train MAE: 0.043216 | Val MAE: 0.026625 | LR: 0.005000
+  Epoch   8 | Train MSE: 0.003825 | Val MSE: 0.000868 | Train MAE: 0.049438 | Val MAE: 0.025507 | LR: 0.005000
+  Epoch   9 | Train MSE: 0.001707 | Val MSE: 0.000628 | Train MAE: 0.032747 | Val MAE: 0.020563 | LR: 0.005000
+  Epoch  10 | Train MSE: 0.004270 | Val MSE: 0.001605 | Train MAE: 0.052025 | Val MAE: 0.033873 | LR: 0.005000
+  Epoch  11 | Train MSE: 0.007396 | Val MSE: 0.001194 | Train MAE: 0.071205 | Val MAE: 0.027797 | LR: 0.005000
+  Epoch  12 | Train MSE: 0.004602 | Val MSE: 0.001198 | Train MAE: 0.055187 | Val MAE: 0.026430 | LR: 0.005000
+  Epoch  13 | Train MSE: 0.004495 | Val MSE: 0.002036 | Train MAE: 0.052857 | Val MAE: 0.036370 | LR: 0.005000
+  Epoch  14 | Train MSE: 0.005937 | Val MSE: 0.000929 | Train MAE: 0.065708 | Val MAE: 0.025867 | LR: 0.005000
+  Epoch  15 | Train MSE: 0.004947 | Val MSE: 0.001479 | Train MAE: 0.058274 | Val MAE: 0.030768 | LR: 0.005000
+  Epoch  16 | Train MSE: 0.002897 | Val MSE: 0.000629 | Train MAE: 0.041930 | Val MAE: 0.019803 | LR: 0.002500
+  Epoch  17 | Train MSE: 0.003190 | Val MSE: 0.000703 | Train MAE: 0.044179 | Val MAE: 0.021855 | LR: 0.002500
+  Epoch  18 | Train MSE: 0.002941 | Val MSE: 0.000866 | Train MAE: 0.043284 | Val MAE: 0.025064 | LR: 0.002500
+  Epoch  19 | Train MSE: 0.003329 | Val MSE: 0.000636 | Train MAE: 0.046294 | Val MAE: 0.018572 | LR: 0.002500
+  Epoch   1 | Train MSE: 0.065324 | Val MSE: 0.050790 | Train MAE: 0.209870 | Val MAE: 0.179557 | LR: 0.000100
+  Epoch   2 | Train MSE: 0.063366 | Val MSE: 0.048380 | Train MAE: 0.206701 | Val MAE: 0.175243 | LR: 0.000100
+  Epoch   3 | Train MSE: 0.059811 | Val MSE: 0.044484 | Train MAE: 0.201002 | Val MAE: 0.167228 | LR: 0.000100
+  Epoch   4 | Train MSE: 0.053905 | Val MSE: 0.038129 | Train MAE: 0.190903 | Val MAE: 0.153235 | LR: 0.000100
+  Epoch   5 | Train MSE: 0.045142 | Val MSE: 0.029848 | Train MAE: 0.173474 | Val MAE: 0.131315 | LR: 0.000100
+  Epoch   6 | Train MSE: 0.033863 | Val MSE: 0.022879 | Train MAE: 0.150384 | Val MAE: 0.114071 | LR: 0.000100
+  Epoch   7 | Train MSE: 0.025169 | Val MSE: 0.017150 | Train MAE: 0.124482 | Val MAE: 0.090348 | LR: 0.000100
+  Epoch   8 | Train MSE: 0.018971 | Val MSE: 0.012666 | Train MAE: 0.102995 | Val MAE: 0.083267 | LR: 0.000100
+  Epoch   9 | Train MSE: 0.013605 | Val MSE: 0.009175 | Train MAE: 0.089191 | Val MAE: 0.074912 | LR: 0.000100
+  Epoch  10 | Train MSE: 0.010426 | Val MSE: 0.007575 | Train MAE: 0.079647 | Val MAE: 0.072761 | LR: 0.000100
+  Epoch  11 | Train MSE: 0.010275 | Val MSE: 0.006892 | Train MAE: 0.082580 | Val MAE: 0.072006 | LR: 0.000100
+  Epoch  12 | Train MSE: 0.009040 | Val MSE: 0.005914 | Train MAE: 0.075155 | Val MAE: 0.066581 | LR: 0.000100
+  Epoch  13 | Train MSE: 0.009278 | Val MSE: 0.005647 | Train MAE: 0.078707 | Val MAE: 0.064305 | LR: 0.000100
+  Epoch  14 | Train MSE: 0.008859 | Val MSE: 0.004737 | Train MAE: 0.076346 | Val MAE: 0.058576 | LR: 0.000100
+  Epoch  15 | Train MSE: 0.008112 | Val MSE: 0.004335 | Train MAE: 0.074257 | Val MAE: 0.056206 | LR: 0.000100
+  Epoch  16 | Train MSE: 0.007164 | Val MSE: 0.004199 | Train MAE: 0.067276 | Val MAE: 0.055241 | LR: 0.000050
+  Epoch  17 | Train MSE: 0.007340 | Val MSE: 0.004390 | Train MAE: 0.068050 | Val MAE: 0.056291 | LR: 0.000050
+  Epoch  18 | Train MSE: 0.007216 | Val MSE: 0.004564 | Train MAE: 0.066442 | Val MAE: 0.057644 | LR: 0.000050
+  Epoch  19 | Train MSE: 0.007189 | Val MSE: 0.003939 | Train MAE: 0.067812 | Val MAE: 0.053380 | LR: 0.000050
+  Epoch  20 | Train MSE: 0.007883 | Val MSE: 0.003992 | Train MAE: 0.073599 | Val MAE: 0.053463 | LR: 0.000050
+  Epoch  21 | Train MSE: 0.006549 | Val MSE: 0.003670 | Train MAE: 0.064566 | Val MAE: 0.050998 | LR: 0.000050
+  Epoch  22 | Train MSE: 0.006166 | Val MSE: 0.003811 | Train MAE: 0.063646 | Val MAE: 0.052138 | LR: 0.000050
+  Epoch  23 | Train MSE: 0.006525 | Val MSE: 0.003923 | Train MAE: 0.064936 | Val MAE: 0.053103 | LR: 0.000050
+  Epoch  24 | Train MSE: 0.005575 | Val MSE: 0.003485 | Train MAE: 0.058074 | Val MAE: 0.050158 | LR: 0.000050
+  Epoch  25 | Train MSE: 0.006640 | Val MSE: 0.003853 | Train MAE: 0.066505 | Val MAE: 0.053263 | LR: 0.000050
+  Epoch  26 | Train MSE: 0.006425 | Val MSE: 0.003384 | Train MAE: 0.065067 | Val MAE: 0.050623 | LR: 0.000050
+  Epoch  27 | Train MSE: 0.005947 | Val MSE: 0.003441 | Train MAE: 0.062125 | Val MAE: 0.049628 | LR: 0.000050
+  Epoch  28 | Train MSE: 0.006831 | Val MSE: 0.003748 | Train MAE: 0.065425 | Val MAE: 0.051442 | LR: 0.000050
+  Epoch  29 | Train MSE: 0.006613 | Val MSE: 0.002993 | Train MAE: 0.065039 | Val MAE: 0.047272 | LR: 0.000050
+  Epoch  30 | Train MSE: 0.005588 | Val MSE: 0.003392 | Train MAE: 0.058596 | Val MAE: 0.048968 | LR: 0.000050
+  Epoch   1 | Train MSE: 0.044260 | Val MSE: 0.014196 | Train MAE: 0.165613 | Val MAE: 0.103677 | LR: 0.001000
+  Epoch   2 | Train MSE: 0.014283 | Val MSE: 0.002818 | Train MAE: 0.099485 | Val MAE: 0.043896 | LR: 0.001000
+  Epoch   3 | Train MSE: 0.007225 | Val MSE: 0.003499 | Train MAE: 0.069774 | Val MAE: 0.050028 | LR: 0.001000
+  Epoch   4 | Train MSE: 0.007887 | Val MSE: 0.003459 | Train MAE: 0.072429 | Val MAE: 0.051995 | LR: 0.001000
+  Epoch   5 | Train MSE: 0.007828 | Val MSE: 0.008155 | Train MAE: 0.072225 | Val MAE: 0.075131 | LR: 0.001000
+  Epoch   6 | Train MSE: 0.005704 | Val MSE: 0.002545 | Train MAE: 0.060248 | Val MAE: 0.038460 | LR: 0.001000
+  Epoch   7 | Train MSE: 0.003745 | Val MSE: 0.001273 | Train MAE: 0.048903 | Val MAE: 0.027262 | LR: 0.001000
+  Epoch   8 | Train MSE: 0.003783 | Val MSE: 0.001788 | Train MAE: 0.049103 | Val MAE: 0.032743 | LR: 0.001000
+  Epoch   9 | Train MSE: 0.004754 | Val MSE: 0.001114 | Train MAE: 0.057472 | Val MAE: 0.028678 | LR: 0.001000
+  Epoch  10 | Train MSE: 0.003031 | Val MSE: 0.000922 | Train MAE: 0.043723 | Val MAE: 0.024058 | LR: 0.001000
+  Epoch  11 | Train MSE: 0.004616 | Val MSE: 0.000779 | Train MAE: 0.055998 | Val MAE: 0.022655 | LR: 0.001000
+  Epoch  12 | Train MSE: 0.004219 | Val MSE: 0.000910 | Train MAE: 0.052814 | Val MAE: 0.023764 | LR: 0.001000
+  Epoch  13 | Train MSE: 0.003627 | Val MSE: 0.000947 | Train MAE: 0.049527 | Val MAE: 0.026307 | LR: 0.001000
+  Epoch  14 | Train MSE: 0.003321 | Val MSE: 0.001363 | Train MAE: 0.045915 | Val MAE: 0.029469 | LR: 0.001000
+  Epoch  15 | Train MSE: 0.003836 | Val MSE: 0.001381 | Train MAE: 0.052542 | Val MAE: 0.032714 | LR: 0.001000
+  Epoch  16 | Train MSE: 0.003039 | Val MSE: 0.000712 | Train MAE: 0.042939 | Val MAE: 0.021627 | LR: 0.000500
+  Epoch  17 | Train MSE: 0.002770 | Val MSE: 0.000597 | Train MAE: 0.040160 | Val MAE: 0.018868 | LR: 0.000500
+  Epoch  18 | Train MSE: 0.002646 | Val MSE: 0.000863 | Train MAE: 0.041725 | Val MAE: 0.023587 | LR: 0.000500
+  Epoch  19 | Train MSE: 0.004731 | Val MSE: 0.001494 | Train MAE: 0.055968 | Val MAE: 0.033136 | LR: 0.000500
+  Epoch  20 | Train MSE: 0.005454 | Val MSE: 0.001603 | Train MAE: 0.059035 | Val MAE: 0.034727 | LR: 0.000500
+  Epoch  21 | Train MSE: 0.003791 | Val MSE: 0.001111 | Train MAE: 0.050083 | Val MAE: 0.025628 | LR: 0.000500
+  Epoch  22 | Train MSE: 0.003253 | Val MSE: 0.000531 | Train MAE: 0.045695 | Val MAE: 0.018268 | LR: 0.000500
+  Epoch  23 | Train MSE: 0.003555 | Val MSE: 0.000933 | Train MAE: 0.046560 | Val MAE: 0.024354 | LR: 0.000500
+  Epoch  24 | Train MSE: 0.003540 | Val MSE: 0.000658 | Train MAE: 0.048500 | Val MAE: 0.021209 | LR: 0.000500
+  Epoch  25 | Train MSE: 0.002937 | Val MSE: 0.000603 | Train MAE: 0.043759 | Val MAE: 0.017425 | LR: 0.000500
+  Epoch  26 | Train MSE: 0.005239 | Val MSE: 0.000565 | Train MAE: 0.057337 | Val MAE: 0.019086 | LR: 0.000500
+  Epoch  27 | Train MSE: 0.005408 | Val MSE: 0.001047 | Train MAE: 0.059702 | Val MAE: 0.024519 | LR: 0.000500
+  Epoch  28 | Train MSE: 0.002605 | Val MSE: 0.000514 | Train MAE: 0.041104 | Val MAE: 0.017535 | LR: 0.000500
+  Epoch  29 | Train MSE: 0.003222 | Val MSE: 0.000599 | Train MAE: 0.046115 | Val MAE: 0.018730 | LR: 0.000500
+  Epoch  30 | Train MSE: 0.003218 | Val MSE: 0.000648 | Train MAE: 0.046514 | Val MAE: 0.020713 | LR: 0.000500
+  Epoch   1 | Train MSE: 0.046519 | Val MSE: 0.021872 | Train MAE: 0.175348 | Val MAE: 0.107370 | LR: 0.001000
+  Epoch   2 | Train MSE: 0.020459 | Val MSE: 0.013044 | Train MAE: 0.114722 | Val MAE: 0.095133 | LR: 0.001000
+  Epoch   3 | Train MSE: 0.011194 | Val MSE: 0.004402 | Train MAE: 0.082885 | Val MAE: 0.052187 | LR: 0.001000
+  Epoch   4 | Train MSE: 0.005906 | Val MSE: 0.004050 | Train MAE: 0.058971 | Val MAE: 0.054282 | LR: 0.001000
+  Epoch   5 | Train MSE: 0.005672 | Val MSE: 0.002492 | Train MAE: 0.059412 | Val MAE: 0.042674 | LR: 0.001000
+  Epoch   6 | Train MSE: 0.005595 | Val MSE: 0.001910 | Train MAE: 0.060505 | Val MAE: 0.038375 | LR: 0.001000
+  Epoch   7 | Train MSE: 0.004144 | Val MSE: 0.001417 | Train MAE: 0.049739 | Val MAE: 0.028264 | LR: 0.001000
+  Epoch   8 | Train MSE: 0.006982 | Val MSE: 0.001421 | Train MAE: 0.068788 | Val MAE: 0.031236 | LR: 0.001000
+  Epoch   9 | Train MSE: 0.005998 | Val MSE: 0.000995 | Train MAE: 0.065403 | Val MAE: 0.027211 | LR: 0.001000
+  Epoch  10 | Train MSE: 0.002929 | Val MSE: 0.001002 | Train MAE: 0.043117 | Val MAE: 0.026729 | LR: 0.001000
+  Epoch  11 | Train MSE: 0.004116 | Val MSE: 0.001052 | Train MAE: 0.050436 | Val MAE: 0.025299 | LR: 0.001000
+  Epoch  12 | Train MSE: 0.003612 | Val MSE: 0.000790 | Train MAE: 0.047826 | Val MAE: 0.023201 | LR: 0.001000
+  Epoch  13 | Train MSE: 0.003695 | Val MSE: 0.000597 | Train MAE: 0.046015 | Val MAE: 0.019523 | LR: 0.001000
+  Epoch  14 | Train MSE: 0.004229 | Val MSE: 0.000702 | Train MAE: 0.052119 | Val MAE: 0.022790 | LR: 0.001000
+  Epoch  15 | Train MSE: 0.004255 | Val MSE: 0.000707 | Train MAE: 0.051750 | Val MAE: 0.022873 | LR: 0.001000
+  Epoch  16 | Train MSE: 0.003009 | Val MSE: 0.000468 | Train MAE: 0.043965 | Val MAE: 0.017197 | LR: 0.000500
+  Epoch  17 | Train MSE: 0.002912 | Val MSE: 0.000597 | Train MAE: 0.042113 | Val MAE: 0.019613 | LR: 0.000500
+  Epoch  18 | Train MSE: 0.003476 | Val MSE: 0.000497 | Train MAE: 0.046863 | Val MAE: 0.017890 | LR: 0.000500
+  Epoch  19 | Train MSE: 0.002855 | Val MSE: 0.000610 | Train MAE: 0.041869 | Val MAE: 0.020298 | LR: 0.000500
+  Epoch  20 | Train MSE: 0.003637 | Val MSE: 0.000621 | Train MAE: 0.047160 | Val MAE: 0.021152 | LR: 0.000500
+  Epoch  21 | Train MSE: 0.002477 | Val MSE: 0.000457 | Train MAE: 0.037313 | Val MAE: 0.017659 | LR: 0.000500
+  Epoch  22 | Train MSE: 0.002755 | Val MSE: 0.000405 | Train MAE: 0.042213 | Val MAE: 0.015475 | LR: 0.000500
+  Epoch  23 | Train MSE: 0.001757 | Val MSE: 0.000447 | Train MAE: 0.032920 | Val MAE: 0.017987 | LR: 0.000500
+  Epoch  24 | Train MSE: 0.002647 | Val MSE: 0.000408 | Train MAE: 0.042136 | Val MAE: 0.015756 | LR: 0.000500
+  Epoch  25 | Train MSE: 0.003903 | Val MSE: 0.000389 | Train MAE: 0.051650 | Val MAE: 0.015587 | LR: 0.000500
+  Epoch  26 | Train MSE: 0.001797 | Val MSE: 0.000338 | Train MAE: 0.033232 | Val MAE: 0.014228 | LR: 0.000500
+  Epoch  27 | Train MSE: 0.003113 | Val MSE: 0.000400 | Train MAE: 0.046154 | Val MAE: 0.015354 | LR: 0.000500
+  Epoch  28 | Train MSE: 0.001609 | Val MSE: 0.000363 | Train MAE: 0.032094 | Val MAE: 0.014406 | LR: 0.000500
+  Epoch  29 | Train MSE: 0.002390 | Val MSE: 0.000414 | Train MAE: 0.039842 | Val MAE: 0.015784 | LR: 0.000500
+  Epoch  30 | Train MSE: 0.003245 | Val MSE: 0.000414 | Train MAE: 0.044592 | Val MAE: 0.016133 | LR: 0.000500

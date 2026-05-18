@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+
+# İsteğe bağlı: eğitilmiş model ağırlıkları
+outputs/models/*.pth
