@@ -2,9 +2,13 @@
 
 Elektrikli araç batarya ömrü (RUL) tahmini için **1D-CNN + GRU** hibrit derin öğrenme modeli ve üç uzman ajanlı çok etmenli optimizasyon sistemi. Ajanlar: **Battery Guardian**, **Grid Tariff** ve **Smart Trip**; orchestrator üzerinden koordine edilir.
 
+**GitHub:** [github.com/erdemkarabil/CIDL](https://github.com/erdemkarabil/CIDL)
+
 ## Kurulum
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
