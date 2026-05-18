@@ -30,7 +30,7 @@ python main.py --training-only      # Sadece DL model eğitimi
 
 ## Rapor
 
-Detaylı proje raporu: [VoltOptimizerReport_v2.pdf](VoltOptimizerReport_v2.pdf)
+Detaylı proje raporu: [Report.pdf](Report.pdf)
 
 ## Demo
 
