@@ -90,11 +90,15 @@ def generate_battery_degradation_data(
         for w in range(num_windows):
             t = np.linspace(0, 1, sequence_length)
 
-            # --- Öznitelik 1: Hücre Voltajı (V) ---
-            # Yaşlı batarya → daha düşük voltaj, daha fazla varyans
+            # --- Feature 1: Cell Voltage (V) ---
+            # Aged cells have lower nominal voltage and higher internal
+            # resistance, causing larger voltage sag under load. We model
+            # this as a linear shift of the open-circuit voltage curve
+            # (4.2 V new → ~3.0 V at end-of-life) plus a sinusoidal
+            # charge/discharge cycle and a within-window drift term.
             base_voltage = 4.2 - battery_age * 1.2  # 4.2V → 3.0V
-            voltage_cycle = 0.3 * np.sin(2 * np.pi * t * 3)  # Döngüsel
-            degradation = -0.2 * battery_age * t  # Zamanla düşüş
+            voltage_cycle = 0.3 * np.sin(2 * np.pi * t * 3)
+            degradation = -0.2 * battery_age * t
             voltage = (base_voltage + voltage_cycle + degradation
                        + np.random.normal(0, noise_std * 0.5, sequence_length))
             voltage = np.clip(voltage, 2.5, 4.2)
@@ -106,10 +110,12 @@ def generate_battery_degradation_data(
             current = current_base + current_noise
             current = np.clip(current, -150, 150)
 
-            # --- Öznitelik 3: Sıcaklık (°C) ---
+            # --- Feature 3: Temperature (°C) ---
+            # Joule heating (∝ |I|) dominates; aged cells also show higher
+            # internal resistance, contributing an extra aging_heat offset
             ambient = np.random.uniform(15, 35)
             heat_from_current = 0.15 * np.abs(current)
-            aging_heat = 5 * battery_age  # Yaşlı batarya daha çok ısınır
+            aging_heat = 5 * battery_age
             temperature = (ambient + heat_from_current + aging_heat
                            + np.random.normal(0, noise_std * 10,
                                               sequence_length))
@@ -168,7 +174,9 @@ def create_dataloaders(
     # Öznitelik normalizasyonu (Z-Score)
     feature_means = sequences.mean(axis=(0, 1))
     feature_stds = sequences.std(axis=(0, 1))
-    feature_stds[feature_stds == 0] = 1.0  # Sıfıra bölmeyi engelle
+    # Guard against constant features (std == 0) that would cause division by
+    # zero; replacing with 1.0 leaves those features unscaled
+    feature_stds[feature_stds == 0] = 1.0
     sequences = (sequences - feature_means) / feature_stds
 
     # Hedef normalizasyonu: [0-100] → [0-1]

@@ -231,14 +231,14 @@ class RoutePlannerTool:
         soc_diff = target_soc - current_soc
         energy_needed = capacity * (soc_diff / 100.0)
 
-        # Şarj süresi (sabit güç varsayımı + %80 üstü yavaşlama)
+        # CC/CV charging model: constant-current (CC) up to 80% SoC, then
+        # constant-voltage (CV) taper reduces effective power to ~40% to
+        # protect the cells from lithium plating at high states of charge
         if target_soc > 80:
-            # 80%'e kadar normal, sonrası yavaş
             energy_to_80 = max(0, capacity * ((80 - current_soc) / 100.0))
             energy_80_to_target = capacity * ((target_soc - 80) / 100.0)
 
             time_to_80 = energy_to_80 / station["power_kw"]
-            # %80 üstü → güç %40'a düşer
             time_80_to_target = energy_80_to_target / (
                 station["power_kw"] * 0.4)
 

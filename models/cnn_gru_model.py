@@ -40,8 +40,13 @@ class CNNBlock(nn.Module):
                 in_channels=in_channels,
                 out_channels=out_channels,
                 kernel_size=kernel_size,
-                padding=kernel_size // 2  # Sekans boyutunu korumak için
+                # same-padding: keeps sequence length unchanged so GRU
+                # receives a tensor with the exact same time dimension
+                padding=kernel_size // 2
             ),
+            # BatchNorm before activation stabilises training;
+            # especially helpful here because battery sensor scales differ
+            # by orders of magnitude (volts vs. amps vs. °C)
             nn.BatchNorm1d(out_channels),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
@@ -107,11 +112,17 @@ class HybridCNNGRU(nn.Module):
             hidden_size=gru_hidden_size,
             num_layers=gru_num_layers,
             batch_first=True,
+            # PyTorch raises an error if dropout > 0 with a single GRU layer,
+            # because inter-layer dropout requires at least two layers
             dropout=dropout if gru_num_layers > 1 else 0.0,
+            # Unidirectional: in real-time BMS inference we can only see
+            # past measurements, not future ones
             bidirectional=False,
         )
 
         # ── Attention Mekanizması (Basit) ──
+        # Additive (Bahdanau-style) scoring: maps each GRU hidden state to a
+        # scalar score; tanh keeps gradients healthy across long sequences
         self.attention = nn.Sequential(
             nn.Linear(gru_hidden_size, gru_hidden_size // 2),
             nn.Tanh(),
@@ -126,7 +137,10 @@ class HybridCNNGRU(nn.Module):
             nn.Linear(fc_hidden, fc_hidden // 2),
             nn.ReLU(inplace=True),
             nn.Linear(fc_hidden // 2, 1),
-            nn.Sigmoid(),  # Çıktıyı [0, 1] aralığına sınırla
+            # Sigmoid enforces the physical constraint RUL ∈ [0, 1].
+            # Without it the model can predict negative or >100% RUL,
+            # which is physically meaningless for a battery health metric.
+            nn.Sigmoid(),
         )
 
         # Model bilgisi
@@ -150,24 +164,26 @@ class HybridCNNGRU(nn.Module):
         Returns:
             (batch_size, 1) boyutlu RUL tahmin tensörü [0, 1]
         """
-        # CNN için kanal boyutunu değiştir: (batch, features, seq_len)
+        # Conv1d expects (batch, channels, length); input is (batch, length, features)
         x = x.permute(0, 2, 1)
 
-        # 1D-CNN ile yerel öznitelik çıkarımı
+        # Local temporal pattern extraction (short-range dependencies)
         x = self.cnn(x)
 
-        # GRU için boyut geri dönüşümü: (batch, seq_len, cnn_out)
+        # Restore to (batch, seq_len, cnn_out) for GRU's batch_first mode
         x = x.permute(0, 2, 1)
 
         # GRU ile sıralı modelleme
         gru_out, _ = self.gru(x)
         # gru_out: (batch, seq_len, hidden_size)
 
-        # Attention ağırlıkları
+        # Score each time step, then normalise across the time axis so weights
+        # sum to 1 — this lets the model focus on degradation events (e.g. a
+        # sudden temperature spike) rather than treating all steps equally
         attn_weights = self.attention(gru_out)  # (batch, seq_len, 1)
         attn_weights = torch.softmax(attn_weights, dim=1)
 
-        # Ağırlıklı toplam
+        # Weighted sum collapses the sequence into a single context vector
         context = torch.sum(attn_weights * gru_out, dim=1)
         # context: (batch, hidden_size)
 

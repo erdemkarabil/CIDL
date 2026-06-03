@@ -224,7 +224,9 @@ class BatteryGuardianAgent(BaseAgent):
         # --- UYARI Durumu ---
         elif health == "UYARI":
             safety_level = "UYARI"
-            max_soc = 80.0  # %80 kuralı
+            # 80% rule: lithium-ion cells age significantly faster above 80% SoC
+            # due to lithium plating; capping here extends usable lifetime
+            max_soc = 80.0
             max_current = 80.0
             actions.append(
                 f"🟡 UYARI DURUMU: RUL=%{rul:.1f}. "
@@ -288,7 +290,9 @@ class BatteryGuardianAgent(BaseAgent):
 
         corrected = False
 
-        # Durum 1: RUL iyi ama sıcaklık yüksek → sadece akımı düşür
+        # Case 1: good RUL but elevated temperature — the initial pass may have
+        # been overly conservative; relax SoC limit since the real risk here
+        # is thermal, not capacity degradation
         if rul > 70 and temp > self.limits["warning_temperature"]:
             if decisions["max_charge_soc"] < 80:
                 decisions["max_charge_soc"] = 85.0

@@ -220,6 +220,8 @@ class ModelTrainer:
                 mae = mae_criterion(predictions, batch_y)
 
                 loss.backward()
+                # Clip gradient norm to 1.0 to prevent exploding gradients,
+                # which are a known issue with deep RNNs on long sequences
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
 
@@ -271,7 +273,9 @@ class ModelTrainer:
                     f"LR: {current_lr:.6f}"
                 )
 
-            # Early Stopping
+            # Early Stopping: snapshot the best weights only when validation
+            # loss improves — avoids storing a full copy every epoch while
+            # still guaranteeing we recover the best checkpoint at the end
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 patience_counter = 0
@@ -327,7 +331,9 @@ class ModelTrainer:
                 all_preds.extend(predictions.cpu().numpy())
                 all_targets.extend(batch_y.numpy())
 
-        y_true = np.array(all_targets) * 100  # [0,1] → [0,100]
+        # Rescale back to percentage points for human-readable metrics;
+        # training used normalised [0, 1] targets to match the Sigmoid output
+        y_true = np.array(all_targets) * 100
         y_pred = np.array(all_preds) * 100
 
         mse = mean_squared_error(y_true, y_pred)

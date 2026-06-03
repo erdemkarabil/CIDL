@@ -101,11 +101,13 @@ class BatteryRULTool:
             battery_state.get("elevation", 0.0),
         ], dtype=np.float32)
 
-        # Sekans oluştur (tek adımı sequence_length'e çoğalt)
+        # The model expects a full (seq_len, features) window, but at inference
+        # time we only have a single snapshot.  Tiling the snapshot is a common
+        # approximation used when a rolling buffer is unavailable; the added
+        # Gaussian noise breaks the artificial periodicity so the CNN/GRU
+        # does not produce degenerate activations
         seq_len = DATA_CONFIG["sequence_length"]
         sequence = np.tile(features, (seq_len, 1))
-
-        # Gürültü ekle (gerçekçilik için)
         noise = np.random.normal(0, 0.01, sequence.shape)
         sequence = sequence + noise
 
@@ -152,7 +154,9 @@ class BatteryRULTool:
                 f"(min: %{BATTERY_LIMITS['min_soc']})"
             )
 
-        # ── Sağlık durumu belirleme ──
+        # Health classification: two or more concurrent anomalies (e.g.
+        # low voltage AND high temperature) are treated as CRITICAL regardless
+        # of the predicted RUL, because compound failures escalate non-linearly
         if rul_percentage < BATTERY_LIMITS["critical_rul"] or len(anomalies) > 1:
             health_status = "KRİTİK"
         elif rul_percentage < BATTERY_LIMITS["warning_rul"] or len(anomalies) > 0:

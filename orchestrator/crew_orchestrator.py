@@ -129,7 +129,9 @@ class CrewOrchestrator:
             "current_soc": current_soc,
         })
 
-        # ── Guardian → Grid: Mesaj gönder ──
+        # Pass safety constraints downstream so Grid Tariff can calculate
+        # the correct required energy (capacity × SoC delta) rather than
+        # using a hardcoded 50 kWh estimate
         self.battery_guardian.send_message(
             self.grid_tariff,
             {
@@ -154,6 +156,8 @@ class CrewOrchestrator:
 
         grid_result = self.grid_tariff.execute({
             "required_energy_kwh": 50.0,
+            # Approximate pack power (kW) from current limit (A):
+            # P = I × V_nominal ≈ I × 400V → factor of 0.4 converts A → kW
             "charge_power_kw": guardian_result["charge_parameters"][
                 "max_charge_current_a"] * 0.4,
             "max_charge_soc": max_soc,

@@ -44,11 +44,11 @@ class GridTariffAPITool:
         Returns:
             {"hour": int, "price_kwh": float, "tariff_type": str}
         """
-        # Süper sakin saatler (gece)
+        # Super off-peak (deep night): stochastic ±5% fluctuation models
+        # real-world spot-market volatility even at low-demand hours
         for start, end in self.config["super_off_peak_hours"]:
             if start <= hour < end:
                 base_price = self.config["super_off_peak_price_kwh"]
-                # Rastgele dalgalanma (%5)
                 price = base_price * (1 + np.random.uniform(-0.05, 0.05))
                 return {
                     "hour": hour,
