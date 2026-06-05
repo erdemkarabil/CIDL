@@ -1,17 +1,17 @@
 """
-VoltOptimizer - Sentetik Veri Üretici (Mock Data Generator)
-============================================================
-Elektrikli araç bataryalarından gelen zaman serisi verilerini simüle eder.
+VoltOptimizer - Synthetic Data Generator (Mock Data Generator)
+==============================================================
+Simulates time-series data from electric vehicle battery sensors.
 
-Üretilen Öznitelikler (Features):
-    1. Hücre Voltajı (V)    : 2.5 - 4.2V arasında degradasyon eğrisi
-    2. Akım (A)             : Şarj/Deşarj döngüleri
-    3. Sıcaklık (°C)        : Ortam + iç ısınma modeli
-    4. Araç Hızı (km/h)     : Sürüş profili simülasyonu
-    5. Yol Eğimi (%)        : Topoğrafik varyasyon
+Generated Features:
+    1. Cell Voltage (V)     : 2.5 - 4.2V degradation curve
+    2. Current (A)          : Charge/discharge cycles
+    3. Temperature (°C)     : Ambient + internal heating model
+    4. Vehicle Speed (km/h) : Driving profile simulation
+    5. Road Gradient (%)    : Topographic variation
 
-Hedef (Target):
-    - RUL (Remaining Useful Life): %0 - %100 arası sürekli değer
+Target:
+    - RUL (Remaining Useful Life): Continuous value from 0% to 100%
 """
 
 import numpy as np
@@ -27,16 +27,16 @@ from config import DATA_CONFIG
 
 class BatteryDataset(Dataset):
     """
-    PyTorch Dataset sınıfı.
-    Her örnek: (sequence_length x num_features) boyutunda bir zaman serisi
-    ve ilgili RUL (%) hedef değeri.
+    PyTorch Dataset class.
+    Each sample: a time series of shape (sequence_length × num_features)
+    and the corresponding RUL (%) target value.
     """
 
     def __init__(self, sequences: np.ndarray, targets: np.ndarray):
         """
         Args:
-            sequences: (N, seq_len, features) boyutlu numpy dizisi
-            targets: (N,) boyutlu RUL hedef değerleri [0-100]
+            sequences: Numpy array of shape (N, seq_len, features)
+            targets: RUL target values of shape (N,), range [0-100]
         """
         self.sequences = torch.FloatTensor(sequences)
         self.targets = torch.FloatTensor(targets)
@@ -55,17 +55,17 @@ def generate_battery_degradation_data(
     random_seed: int = None,
 ) -> tuple:
     """
-    Sentetik batarya degradasyon verisi üretir.
+    Generates synthetic battery degradation data.
 
-    Her batarya için farklı bir yaşlanma profili oluşturulur.
-    Gerçek dünya fiziksel modelleri temel alınarak:
-      - Voltaj: Kapasite kaybına bağlı doğrusal olmayan düşüş
-      - Akım: Şarj/Deşarj döngüsel varyasyon
-      - Sıcaklık: Ortam + akıma bağlı ısınma
-      - Hız/Eğim: Rastgele sürüş profili
+    A different ageing profile is created for each battery.
+    Based on real-world physics models:
+      - Voltage: Non-linear drop dependent on capacity loss
+      - Current: Charge/discharge cyclic variation
+      - Temperature: Ambient + current-dependent heating
+      - Speed/Gradient: Random driving profile
 
     Returns:
-        (sequences, targets) → numpy dizileri
+        (sequences, targets) → numpy arrays
     """
     num_batteries = num_batteries or DATA_CONFIG["num_batteries"]
     sequence_length = sequence_length or DATA_CONFIG["sequence_length"]
@@ -78,13 +78,13 @@ def generate_battery_degradation_data(
     all_targets = []
 
     for i in range(num_batteries):
-        # ── Her batarya için rastgele yaş (0.0 = yeni, 1.0 = ömür sonu)
+        # ── Random age per battery (0.0 = new, 1.0 = end-of-life)
         battery_age = np.random.uniform(0.0, 1.0)
 
-        # ── RUL hedef değeri: yaş arttıkça RUL düşer
+        # ── RUL target: higher age → lower RUL
         rul = max(0.0, min(100.0, (1.0 - battery_age) * 100.0))
 
-        # ── Birden fazla pencere oluştur (her batarya için)
+        # ── Multiple windows per battery
         num_windows = np.random.randint(5, 15)
 
         for w in range(num_windows):
@@ -103,8 +103,8 @@ def generate_battery_degradation_data(
                        + np.random.normal(0, noise_std * 0.5, sequence_length))
             voltage = np.clip(voltage, 2.5, 4.2)
 
-            # --- Öznitelik 2: Akım (A) ---
-            # Şarj (+) ve deşarj (-) döngüleri
+            # --- Feature 2: Current (A) ---
+            # Charge (+) and discharge (-) cycles
             current_base = 30 * np.sin(2 * np.pi * t * 2)
             current_noise = np.random.normal(0, 5, sequence_length)
             current = current_base + current_noise
@@ -121,23 +121,23 @@ def generate_battery_degradation_data(
                                               sequence_length))
             temperature = np.clip(temperature, -10, 70)
 
-            # --- Öznitelik 4: Araç Hızı (km/h) ---
+            # --- Feature 4: Vehicle Speed (km/h) ---
             speed = (60 * np.abs(np.sin(2 * np.pi * t * 1.5))
                      + np.random.normal(0, 10, sequence_length))
             speed = np.clip(speed, 0, 180)
 
-            # --- Öznitelik 5: Yol Eğimi (%) ---
+            # --- Feature 5: Road Gradient (%) ---
             elevation = (5 * np.sin(2 * np.pi * t * 0.5)
                          + np.random.normal(0, 2, sequence_length))
             elevation = np.clip(elevation, -15, 15)
 
-            # ── Öznitelikleri birleştir: (seq_len, 5)
+            # ── Stack features: (seq_len, 5)
             sequence = np.stack(
                 [voltage, current, temperature, speed, elevation], axis=-1
             )
             all_sequences.append(sequence)
 
-            # ── Pencere bazlı RUL varyasyonu (küçük dalgalanma)
+            # ── Per-window RUL variation (small fluctuation)
             window_rul = rul + np.random.normal(0, 2)
             window_rul = np.clip(window_rul, 0, 100)
             all_targets.append(window_rul)
@@ -145,10 +145,10 @@ def generate_battery_degradation_data(
     sequences = np.array(all_sequences, dtype=np.float32)
     targets = np.array(all_targets, dtype=np.float32)
 
-    print(f"  ⚡ Sentetik veri üretildi: {sequences.shape[0]} örnek, "
-          f"sekans={sequences.shape[1]}, öznitelik={sequences.shape[2]}")
-    print(f"  📊 RUL dağılımı: min={targets.min():.1f}%, "
-          f"max={targets.max():.1f}%, ort={targets.mean():.1f}%")
+    print(f"  ⚡ Synthetic data generated: {sequences.shape[0]} samples, "
+          f"seq_len={sequences.shape[1]}, features={sequences.shape[2]}")
+    print(f"  📊 RUL distribution: min={targets.min():.1f}%, "
+          f"max={targets.max():.1f}%, mean={targets.mean():.1f}%")
 
     return sequences, targets
 
@@ -158,7 +158,7 @@ def create_dataloaders(
     train_ratio: float = None,
 ) -> tuple:
     """
-    Sentetik veri üretip PyTorch DataLoader'larına dönüştürür.
+    Generates synthetic data and converts it to PyTorch DataLoaders.
 
     Returns:
         (train_loader, val_loader, test_loader, feature_stats)
@@ -168,10 +168,9 @@ def create_dataloaders(
     batch_size = batch_size or TRAIN_CONFIG["batch_size"]
     train_ratio = train_ratio or DATA_CONFIG["train_ratio"]
 
-    # Veri üret
     sequences, targets = generate_battery_degradation_data()
 
-    # Öznitelik normalizasyonu (Z-Score)
+    # Feature normalisation (Z-Score)
     feature_means = sequences.mean(axis=(0, 1))
     feature_stds = sequences.std(axis=(0, 1))
     # Guard against constant features (std == 0) that would cause division by
@@ -179,7 +178,7 @@ def create_dataloaders(
     feature_stds[feature_stds == 0] = 1.0
     sequences = (sequences - feature_means) / feature_stds
 
-    # Hedef normalizasyonu: [0-100] → [0-1]
+    # Target normalisation: [0-100] → [0-1]
     targets = targets / 100.0
 
     feature_stats = {
@@ -187,7 +186,7 @@ def create_dataloaders(
         "stds": feature_stds,
     }
 
-    # Eğitim / Doğrulama / Test bölmesi
+    # Train / Validation / Test split
     X_train, X_temp, y_train, y_temp = train_test_split(
         sequences, targets, train_size=train_ratio,
         random_state=DATA_CONFIG["random_seed"]
@@ -197,7 +196,7 @@ def create_dataloaders(
         random_state=DATA_CONFIG["random_seed"]
     )
 
-    print(f"  📂 Eğitim: {len(X_train)}, Doğrulama: {len(X_val)}, "
+    print(f"  📂 Train: {len(X_train)}, Validation: {len(X_val)}, "
           f"Test: {len(X_test)}")
 
     train_loader = DataLoader(
@@ -222,18 +221,18 @@ def generate_single_realtime_sample(
     current_soc: float = 25.0,
 ) -> dict:
     """
-    Tek bir anlık batarya durumu örneği üretir.
-    Ajanlar tarafından gerçek zamanlı simülasyon için kullanılır.
+    Generates a single instantaneous battery state sample.
+    Used by agents for real-time simulation.
 
     Args:
-        battery_age: Batarya yaşı [0-1]
-        ambient_temp: Ortam sıcaklığı (°C)
-        current_soc: Anlık şarj durumu (%)
+        battery_age: Battery age [0-1]
+        ambient_temp: Ambient temperature (°C)
+        current_soc: Current state of charge (%)
 
     Returns:
-        Batarya durumu sözlüğü
+        Battery state dictionary
     """
-    np.random.seed(None)  # Gerçek rastgelelik
+    np.random.seed(None)  # True randomness
 
     voltage = 4.2 - battery_age * 1.0 - (1 - current_soc / 100) * 0.8
     voltage += np.random.normal(0, 0.02)

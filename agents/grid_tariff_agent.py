@@ -1,17 +1,17 @@
 """
 VoltOptimizer - Grid Tariff Agent
 ==================================
-Akıllı Şebeke ve Enerji Piyasası Analisti Ajanı.
+Smart Grid and Energy Market Analyst Agent.
 
-Görevler:
-    1. Dinamik elektrik fiyat tarifelerini sorgulamak
-    2. Peak / Off-Peak saatleri analiz etmek
-    3. En ucuz ve en optimize şarj zamanlarını belirlemek
-    4. Maliyet tasarruf önerileri sunmak
+Tasks:
+    1. Query dynamic electricity tariff schedules
+    2. Analyse peak / off-peak hours
+    3. Identify the cheapest and most optimal charging windows
+    4. Provide cost-saving recommendations
 
-Akıl Yürütme Süreci:
-    Tarife sorgula → Fiyat analizi → Pencere karşılaştırma →
-    Optimal zaman belirleme → Tasarruf raporu
+Reasoning Process:
+    Query tariff → Price analysis → Window comparison →
+    Optimal time selection → Savings report
 """
 
 import sys
@@ -23,25 +23,25 @@ from utils.logger import logger
 
 class GridTariffAgent(BaseAgent):
     """
-    Akıllı Şebeke ve Enerji Piyasası Analisti.
+    Smart Grid and Energy Market Analyst.
 
-    Simüle edilmiş Web/API aracını kullanarak elektrik fiyatlarını
-    analiz eder ve en uygun şarj zamanlarını önerir.
+    Uses a simulated Web/API tool to analyse electricity prices
+    and recommend the most suitable charging windows.
     """
 
     def __init__(self, grid_api_tool):
         super().__init__(
             role="Grid Tariff Agent",
-            goal=("Elektrik şebekesinin dinamik tarifelerini analiz ederek "
-                  "en ucuz ve en verimli şarj zamanlarını belirlemek"),
+            goal=("Analyse the dynamic tariffs of the electricity grid "
+                  "to identify the cheapest and most efficient charging windows"),
             backstory=(
-                "Ben VoltOptimizer'ın Enerji Piyasası Analistiyim. "
-                "Türkiye'nin elektrik şebekesi dinamik tarifelerini "
-                "anlık olarak takip ediyor ve analiz ediyorum. Amacım "
-                "kullanıcının şarj maliyetini minimize ederken şebeke "
-                "yükünü dengelemektir. Peak/Off-Peak saat dilimlerini, "
-                "mevsimsel fiyat değişimlerini ve anlık talep seviyesini "
-                "değerlendirerek akıllı öneriler sunuyorum."
+                "I am VoltOptimizer's Energy Market Analyst. "
+                "I track and analyse the dynamic tariffs of Turkey's "
+                "electricity grid in real time. My goal is to minimise "
+                "the user's charging cost while balancing grid load. "
+                "I provide smart recommendations by evaluating "
+                "peak/off-peak time slots, seasonal price variations, "
+                "and instantaneous demand levels."
             ),
             tools=[grid_api_tool],
         )
@@ -50,7 +50,7 @@ class GridTariffAgent(BaseAgent):
 
     def execute(self, task_input: dict) -> dict:
         """
-        Ana görev: Enerji piyasasını analiz et ve optimal şarj planı sun.
+        Main task: analyse the energy market and present an optimal charge plan.
 
         Args:
             task_input: {
@@ -62,11 +62,11 @@ class GridTariffAgent(BaseAgent):
             }
 
         Returns:
-            Enerji analizi ve optimal şarj planı
+            Energy analysis and optimal charge plan
         """
         logger.header("💰 GRID TARIFF AGENT")
         logger.log("grid_tariff",
-                    "Enerji piyasası analizi başlatılıyor...")
+                    "Starting energy market analysis...")
 
         required_kwh = task_input.get("required_energy_kwh", 50.0)
         charge_power = task_input.get("charge_power_kw", 50.0)
@@ -74,18 +74,16 @@ class GridTariffAgent(BaseAgent):
         capacity = task_input.get("battery_capacity_kwh", 75.0)
         current_soc = task_input.get("current_soc", 25.0)
 
-        # Gerçek enerji ihtiyacını hesapla
         actual_energy_needed = capacity * ((max_soc - current_soc) / 100.0)
         required_kwh = max(required_kwh, actual_energy_needed)
 
         # ══════════════════════════════════════════════
-        # ADIM 1: 24 Saatlik Tarife Çizelgesini Sorgula
+        # STEP 1: Query 24-Hour Tariff Schedule
         # ══════════════════════════════════════════════
-        self.reason({"step": "Tarife sorgulanıyor"}, step=1)
+        self.reason({"step": "querying tariff"}, step=1)
         logger.agent_thinking(
             self.role,
-            "Simüle edilmiş şebeke API'sinden 24 saatlik tarife "
-            "çizelgesini sorguluyorum.",
+            "Querying the 24-hour tariff schedule from the simulated grid API.",
             step=1,
         )
 
@@ -96,16 +94,16 @@ class GridTariffAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 2: Fiyat Analizi
+        # STEP 2: Price Analysis
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            f"Tarife alındı. Günlük ortalama: "
+            f"Tariff received. Daily average: "
             f"{schedule['daily_avg_price']:.2f} TL/kWh. "
-            f"En ucuz pencere: {schedule['cheapest_window']['start_hour']}:00-"
+            f"Cheapest window: {schedule['cheapest_window']['start_hour']}:00-"
             f"{schedule['cheapest_window']['end_hour']}:00 "
             f"({schedule['cheapest_window']['avg_price_kwh']} TL/kWh). "
-            f"En pahalı pencere: "
+            f"Most expensive: "
             f"{schedule['most_expensive_window']['start_hour']}:00-"
             f"{schedule['most_expensive_window']['end_hour']}:00 "
             f"({schedule['most_expensive_window']['avg_price_kwh']} TL/kWh).",
@@ -113,13 +111,13 @@ class GridTariffAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 3: Optimal Şarj Pencerelerini Belirle
+        # STEP 3: Identify Optimal Charge Windows
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            f"Gereken enerji: {required_kwh:.1f} kWh, "
-            f"şarj gücü: {charge_power:.0f} kW. "
-            f"En uygun şarj pencerelerini hesaplıyorum.",
+            f"Required energy: {required_kwh:.1f} kWh, "
+            f"charge power: {charge_power:.0f} kW. "
+            f"Calculating most suitable charge windows.",
             step=3,
         )
 
@@ -132,16 +130,14 @@ class GridTariffAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 4: Tasarruf Analizi
+        # STEP 4: Savings Analysis
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            "Peak saatte şarj maliyeti ile optimal saatte şarj "
-            "maliyetini karşılaştırıyorum.",
+            "Comparing peak-hour charging cost with optimal-hour charging cost.",
             step=4,
         )
 
-        # Peak saatte şarj maliyeti
         peak_cost = self.use_tool(
             tool_name="GridTariffAPITool",
             tool_instance=self.grid_api_tool,
@@ -150,7 +146,6 @@ class GridTariffAgent(BaseAgent):
             start_hour=schedule["most_expensive_window"]["start_hour"],
         )
 
-        # Optimal maliyet
         optimal_total_cost = sum(w["cost_tl"] for w in optimal_windows)
 
         savings = peak_cost["cost_tl"] - optimal_total_cost
@@ -158,12 +153,12 @@ class GridTariffAgent(BaseAgent):
                        if peak_cost["cost_tl"] > 0 else 0)
 
         # ══════════════════════════════════════════════
-        # ADIM 5: Sonuç Raporu
+        # STEP 5: Result Report
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            f"Tasarruf analizi tamamlandı. Optimal şarj ile "
-            f"{savings:.2f} TL (%{savings_pct:.1f}) tasarruf sağlanabilir.",
+            f"Savings analysis complete. Optimal charging saves "
+            f"{savings:.2f} TL ({savings_pct:.1f}%).",
             step=5,
         )
 
@@ -195,8 +190,8 @@ class GridTariffAgent(BaseAgent):
 
         logger.agent_result(
             self.role,
-            f"Optimal Maliyet: {optimal_total_cost:.2f} TL | "
-            f"Tasarruf: {savings:.2f} TL (%{savings_pct:.1f})"
+            f"Optimal Cost: {optimal_total_cost:.2f} TL | "
+            f"Savings: {savings:.2f} TL ({savings_pct:.1f}%)"
         )
 
         return result
@@ -208,17 +203,16 @@ class GridTariffAgent(BaseAgent):
         savings: float,
         savings_pct: float,
     ) -> str:
-        """Kullanıcı dostu öneri metni üretir."""
+        """Generates a user-friendly recommendation text."""
         if not windows:
-            return "Şarj penceresi belirlenemedi."
+            return "No charge window could be determined."
 
         best = windows[0]
         rec = (
-            f"💡 Önerilen Şarj Planı: "
-            f"Saat {best['start_hour']}:00-{best['end_hour']}:00 "
-            f"arasında şarj edin ({best['tariff_type']} tarife). "
-            f"Bu sayede yaklaşık {savings:.2f} TL (%{savings_pct:.1f}) "
-            f"tasarruf sağlarsınız. "
-            f"Yoğun saatlerde (08-12, 18-22) şarjdan kaçının!"
+            f"💡 Recommended Charge Plan: "
+            f"Charge between {best['start_hour']}:00 and {best['end_hour']}:00 "
+            f"({best['tariff_type']} tariff). "
+            f"This saves approximately {savings:.2f} TL ({savings_pct:.1f}%). "
+            f"Avoid charging during peak hours (08-12, 18-22)!"
         )
         return rec

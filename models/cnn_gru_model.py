@@ -1,20 +1,19 @@
 """
-VoltOptimizer - Hibrit 1D-CNN + GRU Derin Öğrenme Modeli
+VoltOptimizer - Hybrid 1D-CNN + GRU Deep Learning Model
 =========================================================
-Elektrikli araç bataryalarının Kalan Kullanım Ömrünü (RUL) tahmin eden
-hibrit bir mimari.
+A hybrid architecture for predicting the Remaining Useful Life (RUL)
+of electric vehicle batteries.
 
-Mimari Akışı:
+Architecture Flow:
     Input(batch, seq_len, features)
-        → 1D-CNN Blokları (zamansal yerel öznitelik çıkarımı)
-        → GRU Katmanları (uzun vadeli bağımlılık öğrenimi)
-        → Fully Connected Katmanlar (regresyon çıktısı)
-        → Output: RUL tahmini [0, 1]
+        → 1D-CNN Blocks (local temporal feature extraction)
+        → GRU Layers (long-range dependency learning)
+        → Fully Connected Layers (regression output)
+        → Output: RUL prediction [0, 1]
 
-Referans:
-    Bu hibrit yaklaşım, CNN'in kısa vadeli zamansal desenleri yakalama
-    yeteneğini, GRU'nun uzun vadeli bağımlılıkları modelleme kapasitesi
-    ile birleştirir.
+Reference:
+    This hybrid approach combines CNN's ability to capture short-term
+    temporal patterns with GRU's capacity to model long-term dependencies.
 """
 
 import torch
@@ -28,7 +27,7 @@ from config import MODEL_CONFIG, DATA_CONFIG
 
 class CNNBlock(nn.Module):
     """
-    1D Konvolüsyon Bloğu.
+    1D Convolution Block.
     Conv1D → BatchNorm → ReLU → Dropout
     """
 
@@ -58,22 +57,22 @@ class CNNBlock(nn.Module):
 
 class HybridCNNGRU(nn.Module):
     """
-    1D-CNN + GRU Hibrit Model.
+    1D-CNN + GRU Hybrid Model.
 
-    Katman yapısı:
-        1. 1D-CNN Katmanları: Zamansal yerel öznitelik çıkarımı
-        2. GRU Katmanları: Sıralı bağımlılık modelleme
-        3. Attention Mekanizması: Önemli zaman adımlarına odaklanma
-        4. Fully Connected: Regresyon çıktısı
+    Layer structure:
+        1. 1D-CNN Layers: Local temporal feature extraction
+        2. GRU Layers: Sequential dependency modelling
+        3. Attention Mechanism: Focus on important time steps
+        4. Fully Connected: Regression output
 
     Args:
-        num_features: Girdi öznitelik sayısı
-        cnn_filters: CNN filtre sayıları listesi
-        cnn_kernel_size: CNN çekirdek boyutu
-        gru_hidden_size: GRU gizli katman boyutu
-        gru_num_layers: GRU katman sayısı
-        fc_hidden: Tam bağlantılı katman boyutu
-        dropout: Dropout oranı
+        num_features: Number of input features
+        cnn_filters: List of CNN filter counts
+        cnn_kernel_size: CNN kernel size
+        gru_hidden_size: GRU hidden layer size
+        gru_num_layers: Number of GRU layers
+        fc_hidden: Fully connected layer size
+        dropout: Dropout rate
     """
 
     def __init__(
@@ -88,7 +87,7 @@ class HybridCNNGRU(nn.Module):
     ):
         super().__init__()
 
-        # Varsayılan değerleri config'den al
+        # Load defaults from config
         num_features = num_features or DATA_CONFIG["num_features"]
         cnn_filters = cnn_filters or MODEL_CONFIG["cnn_filters"]
         cnn_kernel_size = cnn_kernel_size or MODEL_CONFIG["cnn_kernel_size"]
@@ -97,7 +96,7 @@ class HybridCNNGRU(nn.Module):
         fc_hidden = fc_hidden or MODEL_CONFIG["fc_hidden"]
         dropout = dropout if dropout is not None else MODEL_CONFIG["dropout"]
 
-        # ── 1D-CNN Katmanları ──
+        # ── 1D-CNN Layers ──
         cnn_layers = []
         in_ch = num_features
         for out_ch in cnn_filters:
@@ -106,7 +105,7 @@ class HybridCNNGRU(nn.Module):
             in_ch = out_ch
         self.cnn = nn.Sequential(*cnn_layers)
 
-        # ── GRU Katmanları ──
+        # ── GRU Layers ──
         self.gru = nn.GRU(
             input_size=cnn_filters[-1],
             hidden_size=gru_hidden_size,
@@ -120,7 +119,7 @@ class HybridCNNGRU(nn.Module):
             bidirectional=False,
         )
 
-        # ── Attention Mekanizması (Basit) ──
+        # ── Attention Mechanism ──
         # Additive (Bahdanau-style) scoring: maps each GRU hidden state to a
         # scalar score; tanh keeps gradients healthy across long sequences
         self.attention = nn.Sequential(
@@ -129,7 +128,7 @@ class HybridCNNGRU(nn.Module):
             nn.Linear(gru_hidden_size // 2, 1),
         )
 
-        # ── Fully Connected Katmanlar (Regresyon Çıktısı) ──
+        # ── Fully Connected Layers (Regression Output) ──
         self.fc = nn.Sequential(
             nn.Linear(gru_hidden_size, fc_hidden),
             nn.ReLU(inplace=True),
@@ -143,7 +142,6 @@ class HybridCNNGRU(nn.Module):
             nn.Sigmoid(),
         )
 
-        # Model bilgisi
         self._config = {
             "num_features": num_features,
             "cnn_filters": cnn_filters,
@@ -156,13 +154,13 @@ class HybridCNNGRU(nn.Module):
 
     def forward(self, x):
         """
-        İleri yayılım.
+        Forward pass.
 
         Args:
-            x: (batch_size, seq_len, num_features) boyutlu girdi tensörü
+            x: Input tensor of shape (batch_size, seq_len, num_features)
 
         Returns:
-            (batch_size, 1) boyutlu RUL tahmin tensörü [0, 1]
+            RUL prediction tensor of shape (batch_size,), values in [0, 1]
         """
         # Conv1d expects (batch, channels, length); input is (batch, length, features)
         x = x.permute(0, 2, 1)
@@ -173,7 +171,7 @@ class HybridCNNGRU(nn.Module):
         # Restore to (batch, seq_len, cnn_out) for GRU's batch_first mode
         x = x.permute(0, 2, 1)
 
-        # GRU ile sıralı modelleme
+        # Sequential modelling with GRU
         gru_out, _ = self.gru(x)
         # gru_out: (batch, seq_len, hidden_size)
 
@@ -187,30 +185,29 @@ class HybridCNNGRU(nn.Module):
         context = torch.sum(attn_weights * gru_out, dim=1)
         # context: (batch, hidden_size)
 
-        # Regresyon çıktısı
         output = self.fc(context)
         return output.squeeze(-1)
 
     def get_config(self) -> dict:
-        """Model konfigürasyonunu döndürür."""
+        """Returns model configuration."""
         return self._config.copy()
 
     def count_parameters(self) -> int:
-        """Toplam eğitilebilir parametre sayısını döndürür."""
+        """Returns the total number of trainable parameters."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def summary(self):
-        """Model özetini yazdırır."""
+        """Prints a model summary."""
         total_params = self.count_parameters()
         print("\n" + "=" * 60)
-        print(f"  🧠 VoltOptimizer - Hibrit 1D-CNN + GRU Modeli")
+        print(f"  🧠 VoltOptimizer - Hybrid 1D-CNN + GRU Model")
         print("=" * 60)
-        print(f"  CNN Filtreleri    : {self._config['cnn_filters']}")
-        print(f"  CNN Kernel Boyutu : {self._config['cnn_kernel_size']}")
-        print(f"  GRU Gizli Boyut   : {self._config['gru_hidden_size']}")
-        print(f"  GRU Katman Sayısı : {self._config['gru_num_layers']}")
-        print(f"  FC Gizli Boyut    : {self._config['fc_hidden']}")
+        print(f"  CNN Filters       : {self._config['cnn_filters']}")
+        print(f"  CNN Kernel Size   : {self._config['cnn_kernel_size']}")
+        print(f"  GRU Hidden Size   : {self._config['gru_hidden_size']}")
+        print(f"  GRU Layers        : {self._config['gru_num_layers']}")
+        print(f"  FC Hidden Size    : {self._config['fc_hidden']}")
         print(f"  Dropout           : {self._config['dropout']}")
-        print(f"  Toplam Parametre  : {total_params:,}")
+        print(f"  Total Parameters  : {total_params:,}")
         print("=" * 60)
         return total_params

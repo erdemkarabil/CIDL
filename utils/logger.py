@@ -1,21 +1,21 @@
 """
-VoltOptimizer - Loglama Altyapısı
-==================================
-Terminal çıktılarını renklendirilmiş ve yapılandırılmış formatta gösteren
-loglama sistemi. Ajanların akıl yürütme süreçleri burada loglanır.
+VoltOptimizer - Logging Infrastructure
+=======================================
+Logging system that displays terminal output in a colourised,
+structured format. Agent reasoning processes are logged here.
 """
 
 import sys
 import datetime
 from colorama import init, Fore, Style
 
-init(autoreset=True)  # Windows uyumluluğu için colorama başlat
+init(autoreset=True)  # Initialise colorama for Windows compatibility
 
 
 class VoltLogger:
     """
-    Renkli ve yapılandırılmış terminal log sistemi.
-    Her ajan ve modül için ayrı prefix ve renk ataması yapar.
+    Colourised, structured terminal log system.
+    Assigns a distinct prefix and colour to each agent and module.
     """
 
     COLORS = {
@@ -53,7 +53,7 @@ class VoltLogger:
         return datetime.datetime.now().strftime("%H:%M:%S")
 
     def log(self, category: str, message: str, indent: int = 0):
-        """Ana log fonksiyonu."""
+        """Main log function."""
         color = self.COLORS.get(category, Fore.WHITE)
         icon = self.ICONS.get(category, "📌")
         prefix = "  " * indent
@@ -73,11 +73,11 @@ class VoltLogger:
         })
 
     def separator(self, char: str = "═", length: int = 70):
-        """Görsel ayırıcı satır."""
+        """Visual separator line."""
         print(f"\n{Fore.CYAN}{char * length}{Style.RESET_ALL}\n")
 
     def header(self, title: str):
-        """Büyük başlık."""
+        """Large section header."""
         self.separator()
         padding = (68 - len(title)) // 2
         print(f"{Fore.CYAN}║{' ' * padding}{Style.BRIGHT}{title}"
@@ -85,17 +85,17 @@ class VoltLogger:
         self.separator()
 
     def agent_thinking(self, agent_name: str, thought: str, step: int = 0):
-        """Ajan akıl yürütme süreci logu."""
+        """Logs an agent's reasoning process."""
         self.log("reasoning",
-                 f"[{agent_name}] Adım {step}: {thought}", indent=1)
+                 f"[{agent_name}] Step {step}: {thought}", indent=1)
 
     def agent_action(self, agent_name: str, action: str):
-        """Ajan eylem logu."""
-        self.log("tool", f"[{agent_name}] Eylem: {action}", indent=1)
+        """Logs an agent action."""
+        self.log("tool", f"[{agent_name}] Action: {action}", indent=1)
 
     def agent_result(self, agent_name: str, result: str):
-        """Ajan sonuç logu."""
-        self.log("success", f"[{agent_name}] Sonuç: {result}", indent=1)
+        """Logs an agent result."""
+        self.log("success", f"[{agent_name}] Result: {result}", indent=1)
 
     def warning(self, message: str):
         self.log("warning", message)

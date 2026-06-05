@@ -1,15 +1,15 @@
 """
-VoltOptimizer - Model Eğitim ve Raporlama Modülü
-==================================================
-Hibrit 1D-CNN + GRU modelinin eğitimi, değerlendirmesi ve
-hiper-parametre deneylerinin loglanması.
+VoltOptimizer - Model Training and Reporting Module
+====================================================
+Training, evaluation, and hyperparameter experiment logging for the
+hybrid 1D-CNN + GRU model.
 
-Özellikler:
-    - Early Stopping ile aşırı öğrenmeyi engelleme
+Features:
+    - Early Stopping to prevent overfitting
     - Learning Rate Scheduling
-    - Epoch bazlı MSE/MAE loglama
-    - Hiper-parametre deney tablosu oluşturma
-    - En iyi model ağırlıklarını kaydetme
+    - Per-epoch MSE/MAE logging
+    - Hyperparameter experiment table generation
+    - Saving best model weights
 """
 
 import os
@@ -32,7 +32,7 @@ from utils.visualization import (
 
 
 class TrainingLogger:
-    """Eğitim sürecini loglar ve raporlar."""
+    """Logs and reports the training process."""
 
     def __init__(self):
         self.epoch_logs = []
@@ -40,7 +40,7 @@ class TrainingLogger:
 
     def log_epoch(self, epoch: int, train_loss: float, val_loss: float,
                   train_mae: float, val_mae: float, lr: float):
-        """Her epoch sonunda metrikleri loglar."""
+        """Logs metrics at the end of each epoch."""
         entry = {
             "epoch": epoch,
             "train_mse": train_loss,
@@ -53,7 +53,7 @@ class TrainingLogger:
 
     def log_experiment(self, name: str, config: dict,
                        mse: float, mae: float, r2: float):
-        """Hiper-parametre deney sonuçlarını loglar."""
+        """Logs hyperparameter experiment results."""
         self.experiment_results.append({
             "name": name,
             "config": config,
@@ -63,7 +63,7 @@ class TrainingLogger:
         })
 
     def print_epoch_table(self, last_n: int = 10):
-        """Son N epoch'un metrik tablosunu yazdırır."""
+        """Prints a metrics table for the last N epochs."""
         if not self.epoch_logs:
             return
 
@@ -78,12 +78,11 @@ class TrainingLogger:
                 f"{log['lr']:.6f}",
             ])
 
-        headers = ["Epoch", "Eğitim MSE", "Doğ. MSE",
-                    "Eğitim MAE", "Doğ. MAE", "LR"]
+        headers = ["Epoch", "Train MSE", "Val MSE", "Train MAE", "Val MAE", "LR"]
         print("\n" + tabulate(rows, headers=headers, tablefmt="grid"))
 
     def print_experiment_table(self):
-        """Hiper-parametre deney sonuçları tablosunu yazdırır."""
+        """Prints the hyperparameter experiment results table."""
         if not self.experiment_results:
             return
 
@@ -96,26 +95,25 @@ class TrainingLogger:
                 f"{r['r2']:.4f}",
             ])
 
-        headers = ["Deney Adı", "Test MSE", "Test MAE", "R² Skoru"]
-        print("\n  📊 Hiper-Parametre Deney Sonuçları:")
+        headers = ["Experiment", "Test MSE", "Test MAE", "R² Score"]
+        print("\n  📊 Hyperparameter Experiment Results:")
         print(tabulate(rows, headers=headers, tablefmt="grid"))
 
     def save_experiment_report(self, filepath: str):
-        """Deney sonuçlarını dosyaya yazar."""
+        """Writes experiment results to a file."""
         with open(filepath, "w", encoding="utf-8") as f:
-            f.write("VoltOptimizer - Hiper-Parametre Deney Raporu\n")
+            f.write("VoltOptimizer - Hyperparameter Experiment Report\n")
             f.write("=" * 60 + "\n\n")
 
             for r in self.experiment_results:
-                f.write(f"Deney: {r['name']}\n")
+                f.write(f"Experiment: {r['name']}\n")
                 f.write(f"  MSE : {r['mse']:.6f}\n")
                 f.write(f"  MAE : {r['mae']:.6f}\n")
                 f.write(f"  R²  : {r['r2']:.4f}\n")
-                f.write(f"  Konfig: {r['config']}\n\n")
+                f.write(f"  Config: {r['config']}\n\n")
 
-            # Epoch log tablosu
             if self.epoch_logs:
-                f.write("\nEpoch Bazlı Eğitim Logu:\n")
+                f.write("\nPer-Epoch Training Log:\n")
                 f.write("-" * 80 + "\n")
                 for log in self.epoch_logs:
                     f.write(
@@ -127,15 +125,15 @@ class TrainingLogger:
                         f"LR: {log['lr']:.6f}\n"
                     )
 
-        print(f"  📄 Deney raporu kaydedildi: {filepath}")
+        print(f"  📄 Experiment report saved: {filepath}")
 
 
 class ModelTrainer:
     """
-    Model eğitimi, değerlendirmesi ve hiper-parametre araması.
+    Model training, evaluation, and hyperparameter search.
 
     Args:
-        model: HybridCNNGRU model örneği
+        model: HybridCNNGRU model instance
         device: torch device (cpu/cuda)
     """
 
@@ -147,7 +145,7 @@ class ModelTrainer:
         self.logger = TrainingLogger()
         self.best_model_state = None
 
-        print(f"  🖥️  Cihaz: {self.device}")
+        print(f"  🖥️  Device: {self.device}")
         self.model.summary()
 
     def train(self, train_loader, val_loader,
@@ -157,26 +155,25 @@ class ModelTrainer:
               patience: int = None,
               experiment_name: str = "default") -> dict:
         """
-        Modeli eğitir.
+        Trains the model.
 
         Args:
-            train_loader: Eğitim DataLoader
-            val_loader: Doğrulama DataLoader
-            epochs: Epoch sayısı
-            learning_rate: Öğrenme oranı
-            weight_decay: Ağırlık çürümesi
-            patience: Early stopping sabır değeri
-            experiment_name: Deney adı
+            train_loader: Training DataLoader
+            val_loader: Validation DataLoader
+            epochs: Number of epochs
+            learning_rate: Learning rate
+            weight_decay: Weight decay
+            patience: Early stopping patience
+            experiment_name: Experiment name
 
         Returns:
-            Eğitim sonuçları sözlüğü
+            Training results dictionary
         """
         epochs = epochs or TRAIN_CONFIG["epochs"]
         learning_rate = learning_rate or TRAIN_CONFIG["learning_rate"]
         weight_decay = weight_decay or TRAIN_CONFIG["weight_decay"]
         patience = patience or TRAIN_CONFIG["patience"]
 
-        # Kayıp fonksiyonu ve optimizer
         criterion = nn.MSELoss()
         mae_criterion = nn.L1Loss()
         optimizer = torch.optim.Adam(
@@ -190,13 +187,12 @@ class ModelTrainer:
             gamma=TRAIN_CONFIG["lr_scheduler_gamma"],
         )
 
-        # Loglar
         train_losses, val_losses = [], []
         train_maes, val_maes = [], []
         best_val_loss = float("inf")
         patience_counter = 0
 
-        print(f"\n  🚀 Eğitim başlatılıyor: {experiment_name}")
+        print(f"\n  🚀 Starting training: {experiment_name}")
         print(f"     Epochs={epochs}, LR={learning_rate}, "
               f"WD={weight_decay}")
         print("-" * 60)
@@ -204,7 +200,7 @@ class ModelTrainer:
         start_time = time.time()
 
         for epoch in range(1, epochs + 1):
-            # ── Eğitim ──
+            # ── Training ──
             self.model.train()
             epoch_train_loss = 0.0
             epoch_train_mae = 0.0
@@ -232,7 +228,7 @@ class ModelTrainer:
             avg_train_loss = epoch_train_loss / num_batches
             avg_train_mae = epoch_train_mae / num_batches
 
-            # ── Doğrulama ──
+            # ── Validation ──
             self.model.eval()
             epoch_val_loss = 0.0
             epoch_val_mae = 0.0
@@ -254,7 +250,6 @@ class ModelTrainer:
             avg_val_loss = epoch_val_loss / val_batches
             avg_val_mae = epoch_val_mae / val_batches
 
-            # Metrikleri kaydet
             current_lr = optimizer.param_groups[0]["lr"]
             train_losses.append(avg_train_loss)
             val_losses.append(avg_val_loss)
@@ -263,7 +258,6 @@ class ModelTrainer:
             self.logger.log_epoch(epoch, avg_train_loss, avg_val_loss,
                                   avg_train_mae, avg_val_mae, current_lr)
 
-            # Epoch çıktısı
             if epoch % 5 == 0 or epoch == 1:
                 print(
                     f"  Epoch {epoch:3d}/{epochs} │ "
@@ -285,19 +279,17 @@ class ModelTrainer:
 
             if patience_counter >= patience:
                 print(f"\n  ⏸️  Early stopping (epoch {epoch}), "
-                      f"en iyi val MSE: {best_val_loss:.6f}")
+                      f"best val MSE: {best_val_loss:.6f}")
                 break
 
             scheduler.step()
 
         elapsed = time.time() - start_time
-        print(f"\n  ⏱️  Eğitim süresi: {elapsed:.1f} saniye")
+        print(f"\n  ⏱️  Training time: {elapsed:.1f} seconds")
 
-        # En iyi modeli yükle
         if self.best_model_state:
             self.model.load_state_dict(self.best_model_state)
 
-        # Grafikleri kaydet
         plot_training_curves(
             train_losses, val_losses, train_maes, val_maes,
             os.path.join(PLOT_DIR, f"training_curves_{experiment_name}.png")
@@ -315,10 +307,10 @@ class ModelTrainer:
 
     def evaluate(self, test_loader, experiment_name: str = "default") -> dict:
         """
-        Test seti üzerinde modeli değerlendirir.
+        Evaluates the model on the test set.
 
         Returns:
-            {mse, mae, r2, y_true, y_pred} sözlüğü
+            {mse, mae, r2, y_true, y_pred} dictionary
         """
         self.model.eval()
         all_preds = []
@@ -340,20 +332,18 @@ class ModelTrainer:
         mae = mean_absolute_error(y_true, y_pred)
         r2 = r2_score(y_true, y_pred)
 
-        print(f"\n  📊 Test Sonuçları ({experiment_name}):")
+        print(f"\n  📊 Test Results ({experiment_name}):")
         print(f"     MSE  : {mse:.4f}")
         print(f"     MAE  : {mae:.4f}")
         print(f"     R²   : {r2:.4f}")
         print(f"     RMSE : {np.sqrt(mse):.4f}")
 
-        # Tahmin grafiğini kaydet
         plot_predictions_vs_actual(
             y_true, y_pred,
             os.path.join(PLOT_DIR,
                          f"predictions_{experiment_name}.png")
         )
 
-        # Deney loguna ekle
         self.logger.log_experiment(
             name=experiment_name,
             config=self.model.get_config(),
@@ -366,76 +356,73 @@ class ModelTrainer:
         }
 
     def save_model(self, name: str = "best_model"):
-        """Model ağırlıklarını kaydeder."""
+        """Saves model weights to disk."""
         path = os.path.join(MODEL_DIR, f"{name}.pth")
         torch.save({
             "model_state_dict": self.model.state_dict(),
             "config": self.model.get_config(),
         }, path)
-        print(f"  💾 Model kaydedildi: {path}")
+        print(f"  💾 Model saved: {path}")
         return path
 
     def load_model(self, path: str):
-        """Kaydedilmiş model ağırlıklarını yükler."""
+        """Loads saved model weights."""
         checkpoint = torch.load(path, map_location=self.device,
                                 weights_only=True)
         self.model.load_state_dict(checkpoint["model_state_dict"])
-        print(f"  📂 Model yüklendi: {path}")
+        print(f"  📂 Model loaded: {path}")
 
     def run_hyperparameter_experiments(self, train_loader, val_loader,
                                        test_loader):
         """
-        Farklı hiper-parametre kombinasyonlarıyla deneyler çalıştırır.
-        Makale Tablo/Grafik verisi üretir.
+        Runs experiments with different hyperparameter configurations.
+        Produces table/plot data for the paper.
         """
         experiments = [
             {
-                "name": "Temel_Model",
-                "config": {},  # Varsayılan config
+                "name": "Base_Model",
+                "config": {},  # Default config
                 "train_args": {"epochs": 30},
             },
             {
-                "name": "Yüksek_LR",
+                "name": "High_LR",
                 "config": {},
                 "train_args": {"epochs": 30, "learning_rate": 0.005},
             },
             {
-                "name": "Düşük_LR",
+                "name": "Low_LR",
                 "config": {},
                 "train_args": {"epochs": 30, "learning_rate": 0.0001},
             },
             {
-                "name": "Büyük_GRU",
+                "name": "Large_GRU",
                 "config": {"gru_hidden_size": 256, "gru_num_layers": 3},
                 "train_args": {"epochs": 30},
             },
             {
-                "name": "Derin_CNN",
+                "name": "Deep_CNN",
                 "config": {"cnn_filters": [32, 64, 128]},
                 "train_args": {"epochs": 30},
             },
         ]
 
         print("\n" + "=" * 60)
-        print("  🔬 HİPER-PARAMETRE DENEYLERİ BAŞLATILIYOR")
+        print("  🔬 STARTING HYPERPARAMETER EXPERIMENTS")
         print("=" * 60)
 
         all_results = []
 
         for exp in experiments:
-            print(f"\n  🧪 Deney: {exp['name']}")
+            print(f"\n  🧪 Experiment: {exp['name']}")
             print("-" * 40)
 
-            # Yeni model oluştur
             model = HybridCNNGRU(**exp["config"])
             self.model = model.to(self.device)
             self.best_model_state = None
 
-            # Eğit
             self.train(train_loader, val_loader,
                        experiment_name=exp["name"], **exp["train_args"])
 
-            # Değerlendir
             result = self.evaluate(test_loader,
                                    experiment_name=exp["name"])
             all_results.append({
@@ -445,16 +432,13 @@ class ModelTrainer:
                 "r2": result["r2"],
             })
 
-        # Sonuç tablosu
         self.logger.print_experiment_table()
 
-        # Karşılaştırma grafiği
         plot_hyperparameter_comparison(
             all_results,
             os.path.join(PLOT_DIR, "hyperparameter_comparison.png")
         )
 
-        # Rapor dosyası
         self.logger.save_experiment_report(
             os.path.join(LOG_DIR, "experiment_report.txt")
         )

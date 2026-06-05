@@ -1,18 +1,17 @@
 """
 VoltOptimizer - Battery Guardian Agent
 =======================================
-Batarya Sağlık Koruyucusu ve Güvenlik Sorumlusu Ajanı.
+Battery Health Guardian and Safety Controller Agent.
 
-Görevler:
-    1. DL modelinin RUL ve anomali çıktılarını düzenli okuma
-    2. Kritik sıcaklık/düşük RUL durumunda şarj parametrelerini
-       dinamik olarak sınırlama
-    3. %80 kuralı uygulama (batarya ömrü koruma)
-    4. Kendi kendini düzeltme ile güvenlik kararlarını revize etme
+Tasks:
+    1. Regularly read RUL and anomaly outputs from the DL model
+    2. Dynamically limit charge parameters on critical temperature / low RUL
+    3. Apply the 80% rule (battery lifetime preservation)
+    4. Revise safety decisions via self-correction
 
-Akıl Yürütme Süreci (ReAct):
-    Gözlem → Sıcaklık/RUL analizi → Risk değerlendirmesi →
-    Şarj parametresi ayarı → Sonuç bildirimi
+Reasoning Process (ReAct):
+    Observe → Temperature/RUL analysis → Risk assessment →
+    Charge parameter adjustment → Report result
 """
 
 import sys
@@ -25,24 +24,24 @@ from utils.logger import logger
 
 class BatteryGuardianAgent(BaseAgent):
     """
-    Batarya Sağlık Koruyucusu Ajanı.
+    Battery Health Guardian Agent.
 
-    DL modelini bir Tool olarak kullanarak batarya durumunu izler
-    ve güvenlik parametrelerini dinamik olarak ayarlar.
+    Uses the DL model as a Tool to monitor battery state
+    and dynamically adjust safety parameters.
     """
 
     def __init__(self, battery_rul_tool):
         super().__init__(
             role="Battery Guardian Agent",
-            goal=("Batarya sağlığını korumak, güvenlik limitlerini "
-                  "dinamik olarak ayarlamak ve anomalilere müdahale etmek"),
+            goal=("Protect battery health, dynamically adjust safety limits, "
+                  "and respond to anomalies"),
             backstory=(
-                "Ben VoltOptimizer'ın Batarya Sağlık Koruyucusuyum. "
-                "Elektrikli araç bataryalarının ömrünü maksimize etmek ve "
-                "güvenlik risklerini minimize etmek için derin öğrenme "
-                "modelinin tahminlerini yorumlayarak anlık kararlar alıyorum. "
-                "Batarya sıcaklığı, voltaj ve RUL verilerini analiz ederek "
-                "şarj akımını ve şarj üst limitini otomatik ayarlıyorum."
+                "I am VoltOptimizer's Battery Health Guardian. "
+                "To maximise the lifetime of EV batteries and minimise safety "
+                "risks, I interpret the predictions of the deep learning model "
+                "and make real-time decisions. I analyse battery temperature, "
+                "voltage, and RUL data to automatically adjust charge current "
+                "and the charge SoC ceiling."
             ),
             tools=[battery_rul_tool],
         )
@@ -50,15 +49,13 @@ class BatteryGuardianAgent(BaseAgent):
         self.battery_rul_tool = battery_rul_tool
         self.limits = BATTERY_LIMITS.copy()
 
-        # Dinamik olarak ayarlanabilir parametreler
         self.current_charge_limit_soc = self.limits["max_charge_soc"]
         self.current_max_charge_current = self.limits["max_current"]
         self.safety_level = "NORMAL"
 
     def execute(self, task_input: dict) -> dict:
         """
-        Ana görev: Batarya durumunu değerlendir ve güvenlik parametrelerini
-        ayarla.
+        Main task: assess battery state and adjust safety parameters.
 
         Args:
             task_input: {
@@ -68,24 +65,24 @@ class BatteryGuardianAgent(BaseAgent):
             }
 
         Returns:
-            Güvenlik değerlendirmesi ve ayarlanmış parametreler
+            Safety assessment and adjusted parameters
         """
         logger.header("🛡️  BATTERY GUARDIAN AGENT")
         logger.log("battery_guardian",
-                    "Batarya güvenlik değerlendirmesi başlatılıyor...")
+                    "Starting battery safety assessment...")
 
         battery_age = task_input.get("battery_age", 0.7)
         ambient_temp = task_input.get("ambient_temp", 45.0)
         current_soc = task_input.get("current_soc", 25.0)
 
         # ══════════════════════════════════════════════
-        # ADIM 1: DL Modelini Tool olarak çağır
+        # STEP 1: Call DL Model as a Tool
         # ══════════════════════════════════════════════
-        self.reason({"step": "DL modeli çağrılıyor"}, step=1)
+        self.reason({"step": "calling DL model"}, step=1)
         logger.agent_thinking(
             self.role,
-            "DL modelini çağırarak anlık RUL tahmini alacağım. "
-            "Bu tahmin, şarj parametrelerini belirlemek için kritik.",
+            "I will call the DL model to get a real-time RUL estimate. "
+            "This prediction is critical for determining charge parameters.",
             step=1,
         )
 
@@ -99,7 +96,7 @@ class BatteryGuardianAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 2: RUL ve Anomali Analizi
+        # STEP 2: RUL and Anomaly Analysis
         # ══════════════════════════════════════════════
         rul_pct = rul_result["rul_percentage"]
         health = rul_result["health_status"]
@@ -116,24 +113,24 @@ class BatteryGuardianAgent(BaseAgent):
 
         logger.agent_thinking(
             self.role,
-            f"RUL tahmini: %{rul_pct:.1f} | Sağlık: {health} | "
-            f"Sıcaklık: {temp:.1f}°C ({temp_status})",
+            f"RUL estimate: {rul_pct:.1f}% | Health: {health} | "
+            f"Temperature: {temp:.1f}°C ({temp_status})",
             step=2,
         )
 
         if anomalies:
             for anomaly in anomalies:
                 logger.agent_thinking(
-                    self.role, f"⚠️ ANOMALİ: {anomaly}", step=2
+                    self.role, f"⚠️ ANOMALY: {anomaly}", step=2
                 )
 
         # ══════════════════════════════════════════════
-        # ADIM 3: Risk Değerlendirmesi ve Parametre Ayarı
+        # STEP 3: Risk Assessment and Parameter Adjustment
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            "Risk değerlendirmesi yapıyorum. Sıcaklık ve RUL'a göre "
-            "şarj parametrelerini ayarlayacağım.",
+            "Performing risk assessment. I will adjust charge parameters "
+            "based on temperature and RUL.",
             step=3,
         )
 
@@ -142,14 +139,14 @@ class BatteryGuardianAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 4: Kendi Kendini Düzeltme
+        # STEP 4: Self-Correction
         # ══════════════════════════════════════════════
         charge_decisions = self._self_correct_decisions(
             charge_decisions, rul_pct, temp
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 5: Sonuç Raporu
+        # STEP 5: Result Report
         # ══════════════════════════════════════════════
         result = {
             "rul_assessment": {
@@ -174,9 +171,9 @@ class BatteryGuardianAgent(BaseAgent):
 
         logger.agent_result(
             self.role,
-            f"Güvenlik Seviyesi: {charge_decisions['safety_level']} | "
-            f"Şarj Limiti: %{charge_decisions['max_charge_soc']:.0f} | "
-            f"Maks Akım: {charge_decisions['max_current']:.0f}A"
+            f"Safety Level: {charge_decisions['safety_level']} | "
+            f"Charge Limit: {charge_decisions['max_charge_soc']:.0f}% | "
+            f"Max Current: {charge_decisions['max_current']:.0f}A"
         )
 
         return result
@@ -190,74 +187,72 @@ class BatteryGuardianAgent(BaseAgent):
         anomalies: list,
     ) -> dict:
         """
-        Risk değerlendirmesi yaparak şarj parametrelerini ayarlar.
+        Evaluates risk and adjusts charge parameters.
 
-        Kural tabanlı akıl yürütme:
-            - KRİTİK: Şarj limiti %60, akım %20'ye düşür
-            - UYARI: Şarj limiti %80, akım %50'ye düşür
-            - NORMAL: Tam güç
+        Rule-based reasoning:
+            - CRITICAL: Charge limit 60%, reduce current to 20%
+            - WARNING:  Charge limit 80%, reduce current to 50%
+            - NORMAL:   Full power
         """
         actions = []
 
-        # --- Varsayılan değerler ---
         max_soc = self.limits["max_charge_soc"]
         max_current = self.limits["max_current"]
         safety_level = "NORMAL"
 
-        # --- KRİTİK Durum ---
-        if health == "KRİTİK":
-            safety_level = "KRİTİK"
+        # --- CRITICAL State ---
+        if health == "CRITICAL":
+            safety_level = "CRITICAL"
             max_soc = 60.0
             max_current = 30.0
             actions.append(
-                f"🔴 KRİTİK DURUM: RUL=%{rul:.1f}. "
-                f"Şarj limiti %60'a ve akım 30A'e düşürüldü."
+                f"🔴 CRITICAL: RUL={rul:.1f}%. "
+                f"Charge limit reduced to 60%, current to 30A."
             )
 
             if temp > self.limits["max_temperature"]:
                 max_current = 15.0
                 actions.append(
-                    f"🔴 AŞIRI SICAKLIK ({temp:.1f}°C): "
-                    f"Akım 15A'e düşürüldü. Soğuma beklenmeli."
+                    f"🔴 OVERTEMPERATURE ({temp:.1f}°C): "
+                    f"Current reduced to 15A. Cooling required."
                 )
 
-        # --- UYARI Durumu ---
-        elif health == "UYARI":
-            safety_level = "UYARI"
+        # --- WARNING State ---
+        elif health == "WARNING":
+            safety_level = "WARNING"
             # 80% rule: lithium-ion cells age significantly faster above 80% SoC
             # due to lithium plating; capping here extends usable lifetime
             max_soc = 80.0
             max_current = 80.0
             actions.append(
-                f"🟡 UYARI DURUMU: RUL=%{rul:.1f}. "
-                f"Batarya ömrünü korumak için %80 kuralı uygulandı."
+                f"🟡 WARNING: RUL={rul:.1f}%. "
+                f"80% rule applied to protect battery lifetime."
             )
 
             if temp > self.limits["warning_temperature"]:
                 max_current = 50.0
                 actions.append(
-                    f"🟡 Yüksek sıcaklık ({temp:.1f}°C): "
-                    f"Akım 50A ile sınırlandırıldı."
+                    f"🟡 High temperature ({temp:.1f}°C): "
+                    f"Current limited to 50A."
                 )
 
-        # --- NORMAL Durum ---
+        # --- NORMAL State ---
         else:
             safety_level = "NORMAL"
-            max_soc = 90.0  # Konservatif normal
+            max_soc = 90.0  # Conservative normal
             max_current = 150.0
             actions.append(
-                f"🟢 NORMAL: RUL=%{rul:.1f}. Tam güç şarj mümkün."
+                f"🟢 NORMAL: RUL={rul:.1f}%. Full-power charging possible."
             )
 
-        # Sıcaklık bazlı ek ayarlama
-        if temp_status == "SOĞUK":
+        # Temperature-based additional adjustment
+        if temp_status == "COLD":
             max_current = min(max_current, 50.0)
             actions.append(
-                f"❄️ Soğuk hava ({temp:.1f}°C): Akım 50A ile sınırlandı, "
-                f"batarya ön ısıtması önerilir."
+                f"❄️ Cold weather ({temp:.1f}°C): Current limited to 50A, "
+                f"battery pre-heating recommended."
             )
 
-        # Logla
         for action in actions:
             logger.agent_action(self.role, action)
 
@@ -276,15 +271,15 @@ class BatteryGuardianAgent(BaseAgent):
         self, decisions: dict, rul: float, temp: float
     ) -> dict:
         """
-        Kendi kendini düzeltme mekanizması.
+        Self-correction mechanism.
 
-        Alınan kararları tekrar gözden geçirir:
-          - Aşırı kısıtlayıcı mı?
-          - Yeterince güvenli mi?
+        Re-examines the decisions made:
+          - Are they overly restrictive?
+          - Are they safe enough?
         """
         logger.agent_thinking(
             self.role,
-            "Kararlarımı gözden geçiriyorum (self-correction)...",
+            "Reviewing my decisions (self-correction)...",
             step=4,
         )
 
@@ -297,41 +292,41 @@ class BatteryGuardianAgent(BaseAgent):
             if decisions["max_charge_soc"] < 80:
                 decisions["max_charge_soc"] = 85.0
                 decisions["actions"].append(
-                    "↩️ Düzeltme: RUL yüksek (%{:.1f}), şarj limiti "
-                    "%85'e yükseltildi (yalnız sıcaklık riski).".format(rul)
+                    "↩️ Correction: RUL is high ({:.1f}%), charge limit raised "
+                    "to 85% (thermal risk only).".format(rul)
                 )
                 corrected = True
 
-        # Durum 2: Aşırı kısıtlayıcı akım (ama sıcaklık normal)
+        # Case 2: Overly restrictive current (but temperature is normal)
         if (decisions["max_current"] < 30
                 and temp < self.limits["warning_temperature"]):
             decisions["max_current"] = 50.0
             decisions["actions"].append(
-                "↩️ Düzeltme: Sıcaklık normal, akım 50A'e yükseltildi."
+                "↩️ Correction: Temperature normal, current raised to 50A."
             )
             corrected = True
 
-        # Durum 3: Her şey çok kötü ama yeterince kısıtlı değil
+        # Case 3: Everything critical but not restricted enough
         if rul < 10 and temp > 55:
             decisions["max_current"] = 10.0
             decisions["max_charge_soc"] = 50.0
-            decisions["safety_level"] = "ACİL"
+            decisions["safety_level"] = "EMERGENCY"
             decisions["actions"].append(
-                "🚨 ACİL DÜZELTME: Aşırı düşük RUL ve yüksek sıcaklık! "
-                "Akım 10A, şarj limiti %50. SERVİS ÇAĞIRILMALI!"
+                "🚨 EMERGENCY CORRECTION: Extremely low RUL and high temperature! "
+                "Current 10A, charge limit 50%. SERVICE REQUIRED!"
             )
             corrected = True
 
         if corrected:
             logger.agent_thinking(
                 self.role,
-                "Kararlar düzeltildi ve güncellendi.",
+                "Decisions corrected and updated.",
                 step=4,
             )
         else:
             logger.agent_thinking(
                 self.role,
-                "Kararlar tutarlı, düzeltme gerekmiyor.",
+                "Decisions are consistent, no correction needed.",
                 step=4,
             )
 

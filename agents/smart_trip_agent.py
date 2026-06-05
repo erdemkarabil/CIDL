@@ -1,17 +1,17 @@
 """
 VoltOptimizer - Smart Trip Agent
 =================================
-Rota ve Seyahat Planlama Asistanı Ajanı.
+Route and Travel Planning Assistant Agent.
 
-Görevler:
-    1. Kullanıcının rotasını, hava durumunu ve yol eğimini analiz etmek
-    2. Batarya durumu ve şebeke fiyatlarına göre şarj duraklarını optimize
-    3. Hangi istasyonda, ne kadar süre, ne maliyetle şarj edileceğini planlamak
-    4. Diğer ajanlardan gelen bilgilerle bütünsel seyahat planı oluşturmak
+Tasks:
+    1. Analyse the user's route, weather, and road gradient
+    2. Optimise charge stops based on battery state and grid prices
+    3. Plan which station, how long, and at what cost to charge
+    4. Build a comprehensive travel plan integrating other agents' data
 
-Akıl Yürütme Süreci:
-    Rota analizi → Batarya Guardian bilgisi → Grid bilgisi →
-    Şarj durağı optimizasyonu → Bütünsel plan çıktısı
+Reasoning Process:
+    Route analysis → Battery Guardian data → Grid data →
+    Charge stop optimisation → Comprehensive plan output
 """
 
 import sys
@@ -23,26 +23,25 @@ from utils.logger import logger
 
 class SmartTripAgent(BaseAgent):
     """
-    Rota ve Seyahat Planlama Asistanı.
+    Route and Travel Planning Assistant.
 
-    Route Planner Tool'u (mock Google Maps) kullanarak optimal
-    seyahat planı oluşturur. Battery Guardian ve Grid Tariff
-    ajanlarından gelen bilgileri entegre eder.
+    Uses the Route Planner Tool (mock Google Maps) to build an optimal
+    travel plan. Integrates information from Battery Guardian and
+    Grid Tariff agents.
     """
 
     def __init__(self, route_planner_tool):
         super().__init__(
             role="Smart Trip Agent",
-            goal=("Kullanıcının rotasını, batarya durumunu ve enerji "
-                  "fiyatlarını birleştirerek en güvenli, en ucuz ve en "
-                  "hızlı seyahat planını oluşturmak"),
+            goal=("Create the safest, cheapest, and fastest travel plan "
+                  "by combining the user's route, battery state, and energy prices"),
             backstory=(
-                "Ben VoltOptimizer'ın Seyahat Planlama Asistanıyım. "
-                "Google Maps benzeri bir araç kullanarak rota analizi "
-                "yapıyor, hava koşullarını ve yol eğimini değerlendiriyorum. "
-                "Battery Guardian Agent'ın güvenlik verilerini ve "
-                "Grid Tariff Agent'ın fiyat analizlerini entegre ederek "
-                "kullanıcıya bütünsel bir seyahat planı sunuyorum."
+                "I am VoltOptimizer's Travel Planning Assistant. "
+                "I use a Google Maps-like tool to analyse routes, "
+                "evaluate weather conditions and road gradients. "
+                "I integrate Battery Guardian Agent's safety data and "
+                "Grid Tariff Agent's price analysis to present the user "
+                "with a comprehensive travel plan."
             ),
             tools=[route_planner_tool],
         )
@@ -51,7 +50,7 @@ class SmartTripAgent(BaseAgent):
 
     def execute(self, task_input: dict) -> dict:
         """
-        Ana görev: Bütünsel seyahat planı oluştur.
+        Main task: build a comprehensive travel plan.
 
         Args:
             task_input: {
@@ -65,14 +64,13 @@ class SmartTripAgent(BaseAgent):
             }
 
         Returns:
-            Bütünsel seyahat planı
+            Comprehensive travel plan
         """
         logger.header("🗺️  SMART TRIP AGENT")
-        logger.log("smart_trip",
-                    "Seyahat planlaması başlatılıyor...")
+        logger.log("smart_trip", "Starting travel planning...")
 
-        origin = task_input.get("origin", "İzmir")
-        destination = task_input.get("destination", "İstanbul")
+        origin = task_input.get("origin", "Izmir")
+        destination = task_input.get("destination", "Istanbul")
         distance = task_input.get("total_distance_km", 600.0)
         current_soc = task_input.get("current_soc", 25.0)
         temp = task_input.get("ambient_temperature", 35.0)
@@ -80,11 +78,10 @@ class SmartTripAgent(BaseAgent):
         grid_report = task_input.get("grid_tariff_report", {})
 
         # ══════════════════════════════════════════════
-        # ADIM 1: Diğer ajanlardan gelen bilgileri değerlendir
+        # STEP 1: Evaluate data from other agents
         # ══════════════════════════════════════════════
-        self.reason({"step": "Ajan bilgileri değerlendiriliyor"}, step=1)
+        self.reason({"step": "evaluating agent data"}, step=1)
 
-        # Battery Guardian'dan gelen kısıtlamalar
         charge_params = guardian_report.get("charge_parameters", {})
         max_charge_soc = charge_params.get("max_charge_soc", 80.0)
         max_current = charge_params.get("max_charge_current_a", 150.0)
@@ -92,31 +89,29 @@ class SmartTripAgent(BaseAgent):
 
         logger.agent_thinking(
             self.role,
-            f"Battery Guardian'dan gelen kısıtlamalar: "
-            f"Maks şarj: %{max_charge_soc:.0f}, "
-            f"Maks akım: {max_current:.0f}A, "
-            f"Güvenlik: {safety_level}",
+            f"Constraints from Battery Guardian: "
+            f"Max charge: {max_charge_soc:.0f}%, "
+            f"Max current: {max_current:.0f}A, "
+            f"Safety: {safety_level}",
             step=1,
         )
 
-        # Grid Tariff'den gelen fiyat bilgileri
         cost_comp = grid_report.get("cost_comparison", {})
         optimal_cost = cost_comp.get("optimal_cost_tl", 0)
 
         logger.agent_thinking(
             self.role,
-            f"Grid Tariff'den gelen optimal maliyet: "
-            f"{optimal_cost:.2f} TL. "
-            f"Bu bilgiyi şarj durak planlamasında kullanacağım.",
+            f"Optimal cost from Grid Tariff: {optimal_cost:.2f} TL. "
+            f"I will use this in charge stop planning.",
             step=1,
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 2: Rota planlaması (Mock Google Maps)
+        # STEP 2: Route planning (Mock Google Maps)
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            f"Rota analizi başlatılıyor: {origin} → {destination} "
+            f"Starting route analysis: {origin} → {destination} "
             f"({distance:.0f} km, {temp:.0f}°C)",
             step=2,
         )
@@ -134,11 +129,11 @@ class SmartTripAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 3: Güvenlik kısıtlamalarına göre plan revizyonu
+        # STEP 3: Plan revision for safety constraints
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            "Güvenlik kısıtlamalarına göre planı revize ediyorum.",
+            "Revising plan according to safety constraints.",
             step=3,
         )
 
@@ -147,12 +142,11 @@ class SmartTripAgent(BaseAgent):
         )
 
         # ══════════════════════════════════════════════
-        # ADIM 4: Bütünsel plan oluşturma
+        # STEP 4: Build comprehensive plan
         # ══════════════════════════════════════════════
         logger.agent_thinking(
             self.role,
-            "Tüm bilgileri birleştirerek bütünsel seyahat planını "
-            "oluşturuyorum.",
+            "Combining all information to build the comprehensive travel plan.",
             step=4,
         )
 
@@ -164,14 +158,14 @@ class SmartTripAgent(BaseAgent):
         self.outputs["trip_plan"] = final_plan
 
         # ══════════════════════════════════════════════
-        # ADIM 5: Sonuç Raporu
+        # STEP 5: Result Report
         # ══════════════════════════════════════════════
         summary = final_plan["trip_summary"]
         logger.agent_result(
             self.role,
-            f"Seyahat Planı Hazır → "
-            f"{summary['total_charge_stops']} durak, "
-            f"{summary['total_trip_time']} saat, "
+            f"Travel Plan Ready → "
+            f"{summary['total_charge_stops']} stops, "
+            f"{summary['total_trip_time']} hours, "
             f"{summary['total_cost']} TL"
         )
 
@@ -185,22 +179,21 @@ class SmartTripAgent(BaseAgent):
         max_charge_soc: float,
     ) -> dict:
         """
-        Güvenlik seviyesine göre seyahat planını revize eder.
+        Revises the travel plan according to the safety level.
         """
         revised = plan.copy()
         revisions = []
 
-        if safety_level in ("KRİTİK", "ACİL"):
-            # Kritik durumda ek şarj durakları ekle
+        if safety_level in ("CRITICAL", "EMERGENCY"):
             revisions.append(
-                "⚠️ KRİTİK güvenlik seviyesi: Daha sık şarj molaları "
-                "planlandı ve şarj akımı düşürüldü."
+                "⚠️ CRITICAL safety level: More frequent charge stops "
+                "planned and charge current reduced."
             )
-            # Şarj sürelerini güncelle (düşük akım = uzun şarj)
             if "charge_stops" in revised:
                 for stop in revised["charge_stops"]:
                     original_power = stop.get("charge_power_kw", 150)
-                    # Güç kısıtlamasını uygula (akım * yaklaşık voltaj)
+                    # Approximate pack power from current limit (A):
+                    # P = I × V_nominal ≈ I × 400V → factor of 0.4 converts A → kW
                     limited_power = min(original_power,
                                         max_current * 0.4)  # ~400V pack
                     if limited_power < original_power:
@@ -210,16 +203,16 @@ class SmartTripAgent(BaseAgent):
                         )
                         stop["charge_power_kw"] = limited_power
                         revisions.append(
-                            f"  → {stop['station_name']}: Güç "
+                            f"  → {stop['station_name']}: Power "
                             f"{original_power:.0f}kW → "
                             f"{limited_power:.0f}kW, "
-                            f"süre: {stop['charge_time_min']:.0f} dk"
+                            f"time: {stop['charge_time_min']:.0f} min"
                         )
 
-        elif safety_level == "UYARI":
+        elif safety_level == "WARNING":
             revisions.append(
-                "🟡 UYARI güvenlik seviyesi: Şarj üst limiti "
-                f"%{max_charge_soc:.0f} olarak kısıtlandı."
+                "🟡 WARNING safety level: Charge SoC ceiling "
+                f"restricted to {max_charge_soc:.0f}%."
             )
 
         for rev in revisions:
@@ -239,65 +232,57 @@ class SmartTripAgent(BaseAgent):
         temperature: float,
     ) -> dict:
         """
-        Tüm ajan bilgilerini birleştirerek nihai seyahat planı oluşturur.
+        Combines all agent data to build the final travel plan.
         """
         charge_stops = trip_plan.get("charge_stops", [])
         summary = trip_plan.get("summary", {})
 
-        # Şarj durakları detayları
         stop_details = []
         for i, stop in enumerate(charge_stops, 1):
             stop_details.append({
-                "durak_no": i,
-                "istasyon": stop.get("station_name", f"İstasyon-{i}"),
-                "konum_km": stop.get("station_location_km", 0),
-                "giriş_soc": f"%{stop.get('current_soc', 0):.0f}",
-                "çıkış_soc": f"%{stop.get('target_soc', 80):.0f}",
-                "enerji_kwh": f"{stop.get('energy_kwh', 0):.1f} kWh",
-                "süre": f"{stop.get('charge_time_min', 0):.0f} dakika",
-                "güç_kw": f"{stop.get('charge_power_kw', 0):.0f} kW",
-                "maliyet": f"{stop.get('cost_tl', 0):.2f} TL",
+                "stop_number": i,
+                "station": stop.get("station_name", f"Station-{i}"),
+                "location_km": stop.get("station_location_km", 0),
+                "arrival_soc": f"{stop.get('current_soc', 0):.0f}%",
+                "departure_soc": f"{stop.get('target_soc', 80):.0f}%",
+                "energy_kwh": f"{stop.get('energy_kwh', 0):.1f} kWh",
+                "duration": f"{stop.get('charge_time_min', 0):.0f} min",
+                "power_kw": f"{stop.get('charge_power_kw', 0):.0f} kW",
+                "cost": f"{stop.get('cost_tl', 0):.2f} TL",
             })
 
-        # Güvenlik durumu
         guardian_actions = guardian_report.get("actions_taken", [])
         safety_info = guardian_report.get("charge_parameters", {})
 
-        # Enerji fiyat bilgisi
         tariff_info = grid_report.get("tariff_analysis", {})
         tariff_rec = grid_report.get("recommendation", "")
 
         final_plan = {
-            "rota": {
-                "başlangıç": origin,
-                "varış": destination,
-                "mesafe_km": distance,
-                "sıcaklık": f"{temperature}°C",
+            "route_info": {
+                "origin": origin,
+                "destination": destination,
+                "distance_km": distance,
+                "temperature": f"{temperature}°C",
             },
-            "güvenlik_durumu": {
-                "seviye": safety_info.get("safety_level", "NORMAL"),
-                "şarj_limiti": f"%{safety_info.get('max_charge_soc', 80):.0f}",
-                "maks_akım": f"{safety_info.get('max_charge_current_a', 150):.0f}A",
-                "aksiyonlar": guardian_actions,
+            "safety_status": {
+                "level": safety_info.get("safety_level", "NORMAL"),
+                "charge_limit": f"{safety_info.get('max_charge_soc', 80):.0f}%",
+                "max_current": f"{safety_info.get('max_charge_current_a', 150):.0f}A",
+                "actions": guardian_actions,
             },
-            "enerji_analizi": {
-                "günlük_ort_fiyat": tariff_info.get(
-                    "daily_avg_price_kwh", 0),
-                "en_ucuz_pencere": tariff_info.get("cheapest_window", {}),
-                "öneri": tariff_rec,
+            "energy_analysis": {
+                "daily_avg_price": tariff_info.get("daily_avg_price_kwh", 0),
+                "cheapest_window": tariff_info.get("cheapest_window", {}),
+                "recommendation": tariff_rec,
             },
-            "şarj_durakları": stop_details,
+            "charge_stops_detail": stop_details,
             "trip_summary": {
                 "total_distance_km": distance,
                 "total_charge_stops": len(charge_stops),
-                "total_charge_time_min": summary.get(
-                    "total_charge_time_min", 0),
-                "total_trip_time": summary.get(
-                    "total_trip_time_hours", 0),
-                "total_cost": summary.get(
-                    "total_charge_cost_tl", 0),
-                "arrival_soc": trip_plan.get("battery", {}).get(
-                    "arrival_soc", 0),
+                "total_charge_time_min": summary.get("total_charge_time_min", 0),
+                "total_trip_time": summary.get("total_trip_time_hours", 0),
+                "total_cost": summary.get("total_charge_cost_tl", 0),
+                "arrival_soc": trip_plan.get("battery", {}).get("arrival_soc", 0),
             },
             "revisions": trip_plan.get("safety_revisions", []),
         }

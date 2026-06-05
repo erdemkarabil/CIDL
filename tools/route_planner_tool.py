@@ -1,15 +1,15 @@
 """
-VoltOptimizer - Rota Planlama Aracı (Mock Google Maps Tool)
-============================================================
-Kullanıcının gitmek istediği rotayı, hava koşullarını ve yol eğimini
-simüle eden bir araç. Smart Trip Agent bu aracı kullanarak optimum
-seyahat planı oluşturur.
+VoltOptimizer - Route Planner Tool (Mock Google Maps Tool)
+==========================================================
+A tool that simulates the route, weather conditions, and road gradient
+for a given trip. Smart Trip Agent uses this tool to build the optimal
+travel plan.
 
-Simülasyon:
-    - Başlangıç → Varış arası rota
-    - Yol üzerindeki şarj istasyonları
-    - Hava sıcaklığı ve yol eğimi
-    - Enerji tüketim tahmini
+Simulation:
+    - Route from origin to destination
+    - Charging stations along the route
+    - Ambient temperature and road gradient
+    - Energy consumption estimate
 """
 
 import numpy as np
@@ -23,49 +23,49 @@ from utils.logger import logger
 
 class RoutePlannerTool:
     """
-    Mock Google Maps benzeri rota planlama aracı.
+    Mock Google Maps-like route planning tool.
 
-    Gerçek harita verisi yerine fizik tabanlı simülasyon kullanarak:
-      - Mesafe ve süre hesaplar
-      - Yol eğimi ve hava durumunu simüle eder
-      - Şarj istasyonlarını konumlandırır
-      - Enerji tüketim tahminleri yapar
+    Uses physics-based simulation instead of real map data to:
+      - Calculate distance and travel time
+      - Simulate road gradient and weather
+      - Locate charging stations
+      - Estimate energy consumption
     """
 
-    # Simüle edilmiş şarj istasyonları veritabanı
+    # Simulated charging station database
     CHARGING_STATIONS = [
         {
-            "id": "CS-001", "name": "İzmir Merkez Hızlı Şarj",
+            "id": "CS-001", "name": "Izmir City Centre Fast Charger",
             "location_km": 0, "type": "fast_dc",
             "power_kw": 150, "price_kwh": 3.50, "available": True
         },
         {
-            "id": "CS-002", "name": "Manisa Yol Üstü Şarj",
+            "id": "CS-002", "name": "Manisa Roadside Charger",
             "location_km": 85, "type": "normal_dc",
             "power_kw": 50, "price_kwh": 2.80, "available": True
         },
         {
-            "id": "CS-003", "name": "Uşak Dinlenme Tesisi Şarj",
+            "id": "CS-003", "name": "Usak Rest Area Charger",
             "location_km": 195, "type": "fast_dc",
             "power_kw": 120, "price_kwh": 3.20, "available": True
         },
         {
-            "id": "CS-004", "name": "Afyon Otoyol Şarj",
+            "id": "CS-004", "name": "Afyon Motorway Charger",
             "location_km": 310, "type": "fast_dc",
             "power_kw": 150, "price_kwh": 3.00, "available": True
         },
         {
-            "id": "CS-005", "name": "Eskişehir Şehir Şarj",
+            "id": "CS-005", "name": "Eskisehir City Charger",
             "location_km": 420, "type": "normal_dc",
             "power_kw": 50, "price_kwh": 2.50, "available": True
         },
         {
-            "id": "CS-006", "name": "Bolu Dağ Geçidi Şarj",
+            "id": "CS-006", "name": "Bolu Mountain Pass Charger",
             "location_km": 530, "type": "fast_dc",
             "power_kw": 100, "price_kwh": 3.30, "available": True
         },
         {
-            "id": "CS-007", "name": "İstanbul Giriş Şarj",
+            "id": "CS-007", "name": "Istanbul Entrance Charger",
             "location_km": 600, "type": "fast_dc",
             "power_kw": 150, "price_kwh": 3.80, "available": True
         },
@@ -73,10 +73,10 @@ class RoutePlannerTool:
 
     def __init__(self):
         self.config = ROUTE_CONFIG
-        logger.log("tool", "RoutePlannerTool başlatıldı (Simülasyon modu)")
+        logger.log("tool", "RoutePlannerTool initialised (Simulation mode)")
 
     def _get_temperature_efficiency(self, temp: float) -> float:
-        """Sıcaklığa bağlı verimlilik faktörünü döndürür."""
+        """Returns the efficiency factor based on temperature."""
         factors = self.config["temperature_efficiency_factor"]
         if temp < 5:
             return factors["cold"]
@@ -91,54 +91,49 @@ class RoutePlannerTool:
 
     def plan_route(
         self,
-        origin: str = "İzmir",
-        destination: str = "İstanbul",
+        origin: str = "Izmir",
+        destination: str = "Istanbul",
         total_distance_km: float = 600.0,
         ambient_temperature: float = 35.0,
         avg_elevation_change_m: float = 500.0,
     ) -> dict:
         """
-        İki nokta arası rota planı oluşturur.
+        Creates a route plan between two points.
 
         Args:
-            origin: Başlangıç noktası
-            destination: Varış noktası
-            total_distance_km: Toplam mesafe (km)
-            ambient_temperature: Ortam sıcaklığı (°C)
-            avg_elevation_change_m: Ortalama yükseklik değişimi (m)
+            origin: Starting point
+            destination: Destination
+            total_distance_km: Total distance (km)
+            ambient_temperature: Ambient temperature (°C)
+            avg_elevation_change_m: Average elevation change (m)
 
         Returns:
-            Detaylı rota bilgisi sözlüğü
+            Detailed route information dictionary
         """
         logger.log("tool",
-                    f"Rota planlanıyor: {origin} → {destination} "
+                    f"Planning route: {origin} → {destination} "
                     f"({total_distance_km:.0f} km)")
 
-        # Verimlilik hesabı
         temp_efficiency = self._get_temperature_efficiency(
             ambient_temperature)
         elevation_factor = (1 + self.config["elevation_factor_per_100m"]
                             * (avg_elevation_change_m / 100))
 
-        # Gerçek enerji tüketimi (kWh/km)
+        # Actual energy consumption (kWh/km)
         base_consumption = self.config["ev_consumption_kwh_per_km"]
         actual_consumption = (base_consumption
                               * (1 / temp_efficiency)
                               * elevation_factor)
 
-        # Toplam enerji ihtiyacı
         total_energy_needed = actual_consumption * total_distance_km
 
-        # Menzil hesabı
         battery_capacity = self.config["ev_battery_capacity_kwh"]
         actual_range = battery_capacity / actual_consumption
 
-        # Yol segmentleri
         segments = self._create_route_segments(
             total_distance_km, ambient_temperature
         )
 
-        # Uygun şarj istasyonlarını filtrele
         relevant_stations = [
             s for s in self.CHARGING_STATIONS
             if s["location_km"] <= total_distance_km
@@ -149,7 +144,7 @@ class RoutePlannerTool:
             "destination": destination,
             "total_distance_km": total_distance_km,
             "estimated_duration_hours": round(
-                total_distance_km / 85, 1),  # Ort. 85 km/h
+                total_distance_km / 85, 1),  # Avg 85 km/h
             "ambient_temperature": ambient_temperature,
             "temperature_efficiency": round(temp_efficiency, 2),
             "elevation_change_m": avg_elevation_change_m,
@@ -165,9 +160,9 @@ class RoutePlannerTool:
         }
 
         logger.log("tool",
-                    f"Rota hazır → Menzil: {actual_range:.0f} km, "
-                    f"İhtiyaç: {total_energy_needed:.1f} kWh, "
-                    f"Şarj gerekli: {'Evet' if result['needs_charging'] else 'Hayır'}")
+                    f"Route ready → Range: {actual_range:.0f} km, "
+                    f"Needed: {total_energy_needed:.1f} kWh, "
+                    f"Charging required: {'Yes' if result['needs_charging'] else 'No'}")
 
         return result
 
@@ -176,7 +171,7 @@ class RoutePlannerTool:
         total_distance: float,
         base_temp: float,
     ) -> list:
-        """Rotayı segmentlere ayırır."""
+        """Divides the route into segments."""
         num_segments = max(4, int(total_distance / 100))
         segment_distance = total_distance / num_segments
 
@@ -185,10 +180,9 @@ class RoutePlannerTool:
             start_km = i * segment_distance
             end_km = (i + 1) * segment_distance
 
-            # Yükseklik varyasyonu
             elevation = np.random.normal(0, 200)
 
-            # Sıcaklık varyasyonu (yüksekliğe bağlı)
+            # Temperature varies with altitude
             temp = base_temp - (abs(elevation) / 1000) * 6.5
             temp += np.random.normal(0, 2)
 
@@ -200,7 +194,7 @@ class RoutePlannerTool:
                 "elevation_change_m": round(elevation, 0),
                 "temperature": round(temp, 1),
                 "road_type": np.random.choice(
-                    ["Otoyol", "Devlet Yolu", "Dağ Geçidi"],
+                    ["Motorway", "State Road", "Mountain Pass"],
                     p=[0.6, 0.3, 0.1]
                 ),
             })
@@ -215,13 +209,13 @@ class RoutePlannerTool:
         battery_capacity_kwh: float = None,
     ) -> dict:
         """
-        Belirli bir istasyonda şarj duraklama detaylarını hesaplar.
+        Calculates charge stop details at a given station.
 
         Args:
-            station: Şarj istasyonu bilgisi
-            current_soc: Mevcut SoC (%)
-            target_soc: Hedef SoC (%)
-            battery_capacity_kwh: Batarya kapasitesi (kWh)
+            station: Charging station information
+            current_soc: Current SoC (%)
+            target_soc: Target SoC (%)
+            battery_capacity_kwh: Battery capacity (kWh)
 
         Returns:
             {"charge_time_min": float, "energy_kwh": float, "cost_tl": float}
@@ -273,29 +267,28 @@ class RoutePlannerTool:
         total_distance_km: float = 600.0,
     ) -> dict:
         """
-        Optimal seyahat planı oluşturur: nerede, ne kadar, ne maliyetle
-        şarj edilecek.
+        Creates the optimal travel plan: where, how much, and at what cost
+        to charge.
 
         Args:
-            origin: Başlangıç noktası
-            destination: Varış noktası
-            current_soc: Mevcut şarj durumu (%)
-            battery_capacity_kwh: Batarya kapasitesi
-            max_charge_soc: Maksimum şarj limiti (%)
-            ambient_temperature: Ortam sıcaklığı
-            total_distance_km: Toplam mesafe
+            origin: Starting point
+            destination: Destination
+            current_soc: Current state of charge (%)
+            battery_capacity_kwh: Battery capacity
+            max_charge_soc: Maximum charge SoC limit (%)
+            ambient_temperature: Ambient temperature
+            total_distance_km: Total distance
 
         Returns:
-            Detaylı seyahat planı sözlüğü
+            Detailed travel plan dictionary
         """
         logger.log("tool",
-                    f"Seyahat optimizasyonu: {origin} → {destination}, "
-                    f"SoC: %{current_soc:.0f}, "
-                    f"Sıcaklık: {ambient_temperature}°C")
+                    f"Trip optimisation: {origin} → {destination}, "
+                    f"SoC: {current_soc:.0f}%, "
+                    f"Temperature: {ambient_temperature}°C")
 
         capacity = battery_capacity_kwh or self.config["ev_battery_capacity_kwh"]
 
-        # Rota bilgisi
         route = self.plan_route(
             origin, destination, total_distance_km,
             ambient_temperature,
@@ -304,13 +297,13 @@ class RoutePlannerTool:
         consumption = route["actual_consumption_kwh_km"]
         current_energy = capacity * (current_soc / 100.0)
 
-        # Simülasyon: km km ilerle, şarj gerektiğinde dur
+        # Simulation: advance km by km, stop when charging is needed
         charge_stops = []
         current_km = 0
         total_charge_cost = 0
         total_charge_time = 0
 
-        # Başlangıçta menzil çok düşükse, çıkış noktasında şarj et
+        # If initial range is too low, charge at departure point
         initial_range = current_energy / consumption
         first_reachable = [
             s for s in route["charging_stations"]
@@ -322,7 +315,6 @@ class RoutePlannerTool:
         )
 
         if needs_initial_charge:
-            # Başlangıç istasyonunda (km 0) şarj et
             origin_stations = [
                 s for s in route["charging_stations"]
                 if s["location_km"] == 0 and s["available"]
@@ -338,37 +330,31 @@ class RoutePlannerTool:
                 total_charge_cost += charge_info["cost_tl"]
                 total_charge_time += charge_info["charge_time_min"]
                 logger.log("tool",
-                           f"Çıkış noktasında şarj gerekli → "
-                           f"{station['name']} ({charge_info['charge_time_min']:.0f} dk)")
+                           f"Initial charge required → "
+                           f"{station['name']} ({charge_info['charge_time_min']:.0f} min)")
 
         while current_km < total_distance_km:
-            # Mevcut enerji ile gidilebilecek mesafe
             remaining_range = current_energy / consumption
 
-            # Bir sonraki şarj istasyonu
             next_stations = [
                 s for s in route["charging_stations"]
                 if s["location_km"] > current_km and s["available"]
             ]
 
-            # Varışa ulaşabilir miyiz?
             remaining_distance = total_distance_km - current_km
-            if remaining_range >= remaining_distance + 20:  # +20 km güvenlik
+            if remaining_range >= remaining_distance + 20:  # +20 km safety margin
                 current_km = total_distance_km
                 current_energy -= remaining_distance * consumption
                 break
 
-            # En yakın ulaşılabilir istasyonda dur
             station_found = False
             for station in next_stations:
                 dist_to_station = station["location_km"] - current_km
-                if dist_to_station <= remaining_range - 10:  # 10 km güvenlik
-                    # İstasyona git
+                if dist_to_station <= remaining_range - 10:  # 10 km safety margin
                     energy_used = dist_to_station * consumption
                     current_energy -= energy_used
                     current_km = station["location_km"]
 
-                    # Şarj et
                     arrival_soc = (current_energy / capacity) * 100
                     charge_info = self.calculate_charge_stop(
                         station, arrival_soc, max_charge_soc, capacity
@@ -383,12 +369,11 @@ class RoutePlannerTool:
                     break
 
             if not station_found:
-                # Menzil dışı → Acil uyarı
+                # Out of range → emergency warning
                 logger.log("warning",
-                            "Menzil dışı! Şarj istasyonuna ulaşılamıyor.")
+                            "Out of range! Cannot reach a charging station.")
                 break
 
-        # Varış SoC
         arrival_soc = max(0, (current_energy / capacity) * 100)
 
         trip_plan = {
@@ -424,10 +409,10 @@ class RoutePlannerTool:
         }
 
         logger.log("tool",
-                    f"Seyahat planı hazır → "
-                    f"{len(charge_stops)} şarj durağı, "
-                    f"toplam maliyet: {total_charge_cost:.2f} TL, "
-                    f"toplam süre: "
-                    f"{trip_plan['summary']['total_trip_time_hours']:.1f} saat")
+                    f"Trip plan ready → "
+                    f"{len(charge_stops)} charge stops, "
+                    f"total cost: {total_charge_cost:.2f} TL, "
+                    f"total time: "
+                    f"{trip_plan['summary']['total_trip_time_hours']:.1f} hours")
 
         return trip_plan

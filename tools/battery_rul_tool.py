@@ -1,13 +1,13 @@
 """
-VoltOptimizer - Batarya RUL Tahmin Aracı (Tool)
-=================================================
-Derin Öğrenme modelini bir "araç" olarak sarmalayarak ajanların
-modeli bir fonksiyon gibi çağırıp sonucunu yorumlayabilmesini sağlar.
+VoltOptimizer - Battery RUL Prediction Tool
+=============================================
+Wraps the deep learning model as a "tool" so agents can call the model
+like a function and interpret its output.
 
-Bu modül, eğitilmiş 1D-CNN + GRU modelini yükler ve:
-  - Anlık batarya verileri ile RUL tahmini yapar
-  - Anomali tespiti gerçekleştirir
-  - Batarya sağlık raporu üretir
+This module loads the trained 1D-CNN + GRU model and:
+  - Predicts RUL from real-time battery data
+  - Performs anomaly detection
+  - Generates a battery health report
 """
 
 import os
@@ -26,20 +26,20 @@ from utils.logger import logger
 
 class BatteryRULTool:
     """
-    Ajanlar tarafından kullanılabilen Batarya RUL Tahmin Aracı.
+    Battery RUL Prediction Tool usable by agents.
 
-    Derin öğrenme modelini bir fonksiyon arayüzü olarak sunar.
-    Battery Guardian Agent bu aracı çağırarak:
-      - Anlık RUL tahminini alır
-      - Anomali/sıcaklık durumunu kontrol eder
-      - Güvenlik değerlendirmesi yapar
+    Exposes the deep learning model through a function interface.
+    Battery Guardian Agent calls this tool to:
+      - Get an instantaneous RUL estimate
+      - Check anomaly / temperature status
+      - Perform safety assessment
     """
 
     def __init__(self, model_path: str = None):
         """
         Args:
-            model_path: Eğitilmiş model dosya yolu (.pth)
-                        Eğer None ise, yeni model oluşturulur.
+            model_path: Trained model file path (.pth)
+                        If None, a fresh model is instantiated.
         """
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = HybridCNNGRU()
@@ -52,47 +52,47 @@ class BatteryRULTool:
             checkpoint = torch.load(model_path, map_location=self.device,
                                     weights_only=True)
             self.model.load_state_dict(checkpoint["model_state_dict"])
-            logger.log("tool", f"BatteryRULTool: Model yüklendi → {model_path}")
+            logger.log("tool", f"BatteryRULTool: Model loaded → {model_path}")
         else:
             logger.log("tool",
-                       "BatteryRULTool: Eğitilmiş model bulunamadı, "
-                       "simülasyon modu aktif")
+                       "BatteryRULTool: No trained model found, "
+                       "simulation mode active")
 
     def set_feature_stats(self, stats: dict):
-        """Normalizasyon istatistiklerini ayarlar."""
+        """Sets normalisation statistics."""
         self.feature_stats = stats
 
     def predict_rul(self, battery_state: dict) -> dict:
         """
-        Anlık batarya durumundan RUL tahmin eder.
+        Predicts RUL from an instantaneous battery state.
 
-        Bu fonksiyon ajanlar tarafından doğrudan çağrılabilir.
+        Can be called directly by agents.
 
         Args:
             battery_state: {
-                "voltage": float,      # Hücre voltajı (V)
-                "current": float,      # Anlık akım (A)
-                "temperature": float,  # Sıcaklık (°C)
-                "soc": float,          # Şarj durumu (%)
-                "battery_age": float,  # Batarya yaşı [0-1]
-                "speed": float,        # Araç hızı (km/h)
-                "elevation": float,    # Yol eğimi (%)
+                "voltage": float,      # Cell voltage (V)
+                "current": float,      # Instantaneous current (A)
+                "temperature": float,  # Temperature (°C)
+                "soc": float,          # State of charge (%)
+                "battery_age": float,  # Battery age [0-1]
+                "speed": float,        # Vehicle speed (km/h)
+                "elevation": float,    # Road gradient (%)
             }
 
         Returns:
             {
-                "rul_percentage": float,     # RUL tahmini (%)
-                "health_status": str,        # "İYİ", "UYARI", "KRİTİK"
-                "anomaly_detected": bool,    # Anomali var mı?
-                "anomaly_details": list,     # Anomali detayları
-                "temperature_status": str,   # Sıcaklık durumu
-                "recommendations": list,     # Öneriler
-                "raw_data": dict,            # Ham veri
+                "rul_percentage": float,     # RUL estimate (%)
+                "health_status": str,        # "GOOD", "WARNING", "CRITICAL"
+                "anomaly_detected": bool,    # Anomaly present?
+                "anomaly_details": list,     # Anomaly details
+                "temperature_status": str,   # Temperature status
+                "recommendations": list,     # Recommendations
+                "raw_data": dict,            # Raw input data
             }
         """
-        logger.log("tool", "BatteryRULTool çağrıldı → RUL tahmin ediliyor...")
+        logger.log("tool", "BatteryRULTool called → predicting RUL...")
 
-        # ── Girdi verisini modele uygun formata dönüştür ──
+        # ── Convert input to model-compatible format ──
         features = np.array([
             battery_state["voltage"],
             battery_state["current"],
@@ -102,7 +102,7 @@ class BatteryRULTool:
         ], dtype=np.float32)
 
         # The model expects a full (seq_len, features) window, but at inference
-        # time we only have a single snapshot.  Tiling the snapshot is a common
+        # time we only have a single snapshot. Tiling the snapshot is a common
         # approximation used when a rolling buffer is unavailable; the added
         # Gaussian noise breaks the artificial periodicity so the CNN/GRU
         # does not produce degenerate activations
@@ -111,21 +111,21 @@ class BatteryRULTool:
         noise = np.random.normal(0, 0.01, sequence.shape)
         sequence = sequence + noise
 
-        # Normalizasyon
+        # Normalisation
         if self.feature_stats:
             sequence = ((sequence - self.feature_stats["means"])
                         / self.feature_stats["stds"])
 
-        # Model tahmini
+        # Model inference
         input_tensor = torch.FloatTensor(sequence).unsqueeze(0).to(self.device)
         with torch.no_grad():
             prediction = self.model(input_tensor)
             rul_raw = prediction.item()
 
-        # [0,1] → [0,100] ve fiziksel kısıtlar
+        # [0,1] → [0,100] with physical constraints
         rul_percentage = np.clip(rul_raw * 100, 0, 100)
 
-        # ── Anomali tespiti ──
+        # ── Anomaly detection ──
         anomalies = []
         temp = battery_state["temperature"]
         volt = battery_state["voltage"]
@@ -133,68 +133,68 @@ class BatteryRULTool:
 
         if temp > BATTERY_LIMITS["max_temperature"]:
             anomalies.append(
-                f"KRİTİK SICAKLIK: {temp:.1f}°C "
+                f"CRITICAL TEMPERATURE: {temp:.1f}°C "
                 f"(limit: {BATTERY_LIMITS['max_temperature']}°C)"
             )
         elif temp > BATTERY_LIMITS["warning_temperature"]:
             anomalies.append(
-                f"Yüksek sıcaklık uyarısı: {temp:.1f}°C "
-                f"(uyarı limiti: {BATTERY_LIMITS['warning_temperature']}°C)"
+                f"High temperature warning: {temp:.1f}°C "
+                f"(warning limit: {BATTERY_LIMITS['warning_temperature']}°C)"
             )
 
         if volt < BATTERY_LIMITS["min_voltage"]:
             anomalies.append(
-                f"Düşük voltaj: {volt:.3f}V "
+                f"Low voltage: {volt:.3f}V "
                 f"(min: {BATTERY_LIMITS['min_voltage']}V)"
             )
 
         if soc < BATTERY_LIMITS["min_soc"]:
             anomalies.append(
-                f"Kritik düşük şarj: %{soc:.1f} "
-                f"(min: %{BATTERY_LIMITS['min_soc']})"
+                f"Critically low charge: {soc:.1f}% "
+                f"(min: {BATTERY_LIMITS['min_soc']}%)"
             )
 
         # Health classification: two or more concurrent anomalies (e.g.
         # low voltage AND high temperature) are treated as CRITICAL regardless
         # of the predicted RUL, because compound failures escalate non-linearly
         if rul_percentage < BATTERY_LIMITS["critical_rul"] or len(anomalies) > 1:
-            health_status = "KRİTİK"
+            health_status = "CRITICAL"
         elif rul_percentage < BATTERY_LIMITS["warning_rul"] or len(anomalies) > 0:
-            health_status = "UYARI"
+            health_status = "WARNING"
         else:
-            health_status = "İYİ"
+            health_status = "GOOD"
 
-        # ── Sıcaklık durumu ──
+        # ── Temperature status ──
         if temp > BATTERY_LIMITS["max_temperature"]:
-            temp_status = "KRİTİK_SICAK"
+            temp_status = "CRITICAL_HOT"
         elif temp > BATTERY_LIMITS["warning_temperature"]:
-            temp_status = "YÜKSEK"
+            temp_status = "HIGH"
         elif temp < 5:
-            temp_status = "SOĞUK"
+            temp_status = "COLD"
         else:
             temp_status = "NORMAL"
 
-        # ── Öneriler ──
+        # ── Recommendations ──
         recommendations = []
-        if health_status == "KRİTİK":
+        if health_status == "CRITICAL":
             recommendations.append(
-                "Şarj akımını derhal düşürün (maks. 30A)")
+                "Reduce charge current immediately (max. 30A)")
             recommendations.append(
-                "Şarj üst limitini %80'e indirin")
+                "Lower charge ceiling to 80%")
             recommendations.append(
-                "En yakın servis noktasını kontrol edin")
-        elif health_status == "UYARI":
+                "Check the nearest service point")
+        elif health_status == "WARNING":
             recommendations.append(
-                "Şarj akımını normal seviyeye çekin (maks. 80A)")
+                "Reduce charge current to normal level (max. 80A)")
             recommendations.append(
-                "Batarya sıcaklığını monitör edin")
+                "Monitor battery temperature")
 
-        if temp_status in ("KRİTİK_SICAK", "YÜKSEK"):
+        if temp_status in ("CRITICAL_HOT", "HIGH"):
             recommendations.append(
-                "Soğuma için şarjı duraklat veya akımı azalt")
-        elif temp_status == "SOĞUK":
+                "Pause charging or reduce current to allow cooling")
+        elif temp_status == "COLD":
             recommendations.append(
-                "Batarya ön ısıtması gerekli, verimlilik düşük")
+                "Battery pre-heating required, efficiency is reduced")
 
         result = {
             "rul_percentage": round(rul_percentage, 2),
@@ -210,9 +210,9 @@ class BatteryRULTool:
         }
 
         logger.log("tool",
-                    f"RUL Tahmini: %{rul_percentage:.1f} | "
-                    f"Durum: {health_status} | "
-                    f"Sıcaklık: {temp_status} ({temp:.1f}°C)")
+                    f"RUL Estimate: {rul_percentage:.1f}% | "
+                    f"Status: {health_status} | "
+                    f"Temperature: {temp_status} ({temp:.1f}°C)")
 
         return result
 
@@ -223,17 +223,17 @@ class BatteryRULTool:
         current_soc: float = 25.0,
     ) -> dict:
         """
-        Gerçek zamanlı batarya değerlendirmesi.
-        Mock veri üretici ile anlık sensör verisi simüle eder ve
-        DL modeli ile RUL tahmin eder.
+        Real-time battery assessment.
+        Simulates instantaneous sensor data with the mock data generator
+        and predicts RUL with the DL model.
 
         Args:
-            battery_age: Batarya yaşı [0-1]
-            ambient_temp: Ortam sıcaklığı (°C)
-            current_soc: Anlık şarj durumu (%)
+            battery_age: Battery age [0-1]
+            ambient_temp: Ambient temperature (°C)
+            current_soc: Current state of charge (%)
 
         Returns:
-            RUL tahmin sonucu sözlüğü
+            RUL prediction result dictionary
         """
         battery_state = generate_single_realtime_sample(
             battery_age=battery_age,

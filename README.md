@@ -1,10 +1,10 @@
 # VoltOptimizer
 
-Elektrikli araç batarya ömrü (RUL) tahmini için **1D-CNN + GRU** hibrit derin öğrenme modeli ve üç uzman ajanlı çok etmenli optimizasyon sistemi. Ajanlar: **Battery Guardian**, **Grid Tariff** ve **Smart Trip**; orchestrator üzerinden koordine edilir.
+A **hybrid 1D-CNN + GRU** deep learning model for electric vehicle battery Remaining Useful Life (RUL) prediction, combined with a multi-agent optimisation system powered by three specialist agents: **Battery Guardian**, **Grid Tariff**, and **Smart Trip**; coordinated through an orchestrator.
 
 **GitHub:** [github.com/erdemkarabil/CIDL](https://github.com/erdemkarabil/CIDL)
 
-## Kurulum
+## Setup
 
 ```bash
 python -m venv .venv
@@ -12,30 +12,30 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Çalıştırma
+## Usage
 
 ```bash
-python main.py                      # Tam senaryo (eğitim + ajanlar)
-python main.py --skip-training      # Eğitimi atla, sadece ajan senaryosu
-python main.py --experiments        # Hiper-parametre deneyleri dahil
-python main.py --training-only      # Sadece DL model eğitimi
+python main.py                      # Full scenario (training + agents)
+python main.py --skip-training      # Skip training, agent scenario only
+python main.py --experiments        # Include hyperparameter experiments
+python main.py --training-only      # DL model training only
 ```
 
-## Klasör yapısı
+## Folder Structure
 
-| Klasör | Açıklama |
-|--------|----------|
-| `models/` | 1D-CNN+GRU modeli, eğitici ve değerlendirme |
-| `agents/` | Üç uzman ajan (batarya, tarife, rota) |
-| `tools/` | Ajanların kullandığı araçlar |
-| `orchestrator/` | Ajan koordinasyonu ve senaryo akışı |
-| `data/` | Veri setleri ve ön işleme |
-| `outputs/` | Eğitilmiş modeller (`models/`), grafikler (`plots/`), loglar (`logs/`) |
+| Folder | Description |
+|--------|-------------|
+| `models/` | 1D-CNN+GRU model, trainer, and evaluation |
+| `agents/` | Three specialist agents (battery, tariff, route) |
+| `tools/` | Tools used by the agents |
+| `orchestrator/` | Agent coordination and scenario flow |
+| `data/` | Synthetic data generator |
+| `outputs/` | Trained models (`models/`), plots (`plots/`), logs (`logs/`) |
 
-## Rapor
+## Report
 
-Detaylı proje raporu: [Report.pdf](Report.pdf)
+Detailed project report: [Report_patched.docx](Report_patched.docx)
 
 ## Demo
 
-`demo.mp4` — *eklenecek*
+`demo.mp4` — *to be added*

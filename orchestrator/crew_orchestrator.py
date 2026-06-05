@@ -1,17 +1,17 @@
 """
-VoltOptimizer - Ajan Orkestrasyon Motoru
-=========================================
-Tüm ajanların koordinasyonunu ve iletişimini yöneten ana kontrol birimi.
+VoltOptimizer - Agent Orchestration Engine
+==========================================
+Main control unit managing the coordination and communication of all agents.
 
-CrewAI benzeri bir orkestrasyon deseni ile:
-  1. Görev tanımı ve ajan ataması
-  2. Sıralı görev yürütme (pipeline)
-  3. Ajan arası mesajlaşma ve veri paylaşımı
-  4. Bütünsel sonuç derleme
+Follows a CrewAI-like orchestration pattern:
+  1. Task definition and agent assignment
+  2. Sequential task execution (pipeline)
+  3. Inter-agent messaging and data sharing
+  4. Consolidated result compilation
 
-Akış:
+Flow:
     Battery Guardian → Grid Tariff → Smart Trip
-    (Her ajanın çıktısı bir sonrakine girdi olarak akar)
+    (Each agent's output flows as input to the next)
 """
 
 import time
@@ -30,51 +30,49 @@ from agents.smart_trip_agent import SmartTripAgent
 
 class CrewOrchestrator:
     """
-    VoltOptimizer Ajan Orkestrasyon Motoru.
+    VoltOptimizer Agent Orchestration Engine.
 
-    CrewAI framework'üne benzer şekilde bir "Crew" (ekip) oluşturur
-    ve görevleri sıralı olarak yürütür.
+    Builds a "Crew" (team) in the style of the CrewAI framework
+    and executes tasks sequentially.
 
-    Akış:
-        1. Battery Guardian: Batarya güvenlik değerlendirmesi
-        2. Grid Tariff: Enerji piyasası analizi
-        3. Smart Trip: Bütünsel seyahat planı
+    Flow:
+        1. Battery Guardian: Battery safety assessment
+        2. Grid Tariff: Energy market analysis
+        3. Smart Trip: Comprehensive travel plan
     """
 
     def __init__(self, model_path: str = None, feature_stats: dict = None):
         """
-        Orkestratörü başlatır: Tool'ları ve Ajanları oluşturur.
+        Initialises the orchestrator: creates tools and agents.
 
         Args:
-            model_path: Eğitilmiş DL model dosya yolu
-            feature_stats: Öznitelik normalizasyon istatistikleri (means, stds)
+            model_path: Trained DL model file path
+            feature_stats: Feature normalisation statistics (means, stds)
         """
-        logger.header("⚡ VOLTOPTIMIZER - AJAN ORKESTRASYONU")
-        logger.log("orchestrator", "Sistem başlatılıyor...")
+        logger.header("⚡ VOLTOPTIMIZER - AGENT ORCHESTRATION")
+        logger.log("orchestrator", "Initialising system...")
 
-        # ── Tool'ları oluştur ──
-        logger.log("orchestrator", "Araçlar (Tools) yükleniyor...")
+        logger.log("orchestrator", "Loading tools...")
         self.battery_rul_tool = BatteryRULTool(model_path=model_path)
         if feature_stats is not None:
             self.battery_rul_tool.set_feature_stats(feature_stats)
         self.grid_api_tool = GridTariffAPITool()
         self.route_planner_tool = RoutePlannerTool()
 
-        # ── Ajanları oluştur ──
-        logger.log("orchestrator", "Ajanlar oluşturuluyor...")
+        logger.log("orchestrator", "Creating agents...")
         self.battery_guardian = BatteryGuardianAgent(self.battery_rul_tool)
         self.grid_tariff = GridTariffAgent(self.grid_api_tool)
         self.smart_trip = SmartTripAgent(self.route_planner_tool)
 
         logger.log("orchestrator",
-                    "Sistem hazır! 3 ajan aktif, 3 araç yüklendi.")
+                    "System ready! 3 agents active, 3 tools loaded.")
 
     def run_scenario(self, scenario: dict) -> dict:
         """
-        Bir senaryoyu uçtan uca çalıştırır.
+        Runs a scenario end-to-end.
 
-        Senaryo tüm ajanları sırayla tetikler ve
-        aralarındaki iletişimi koordine eder.
+        Triggers all agents in sequence and coordinates
+        the communication between them.
 
         Args:
             scenario: {
@@ -88,40 +86,39 @@ class CrewOrchestrator:
             }
 
         Returns:
-            Bütünsel senaryo sonucu
+            Consolidated scenario result
         """
         logger.separator("═")
-        logger.header(f"🚗 SENARYO: {scenario.get('name', 'Adsız')}")
+        logger.header(f"🚗 SCENARIO: {scenario.get('name', 'Unnamed')}")
         logger.separator("═")
 
         start_time = time.time()
 
-        scenario_name = scenario.get("name", "Adsız Senaryo")
+        scenario_name = scenario.get("name", "Unnamed Scenario")
         battery_age = scenario.get("battery_age", 0.7)
         ambient_temp = scenario.get("ambient_temp", 45.0)
         current_soc = scenario.get("current_soc", 25.0)
-        origin = scenario.get("origin", "İzmir")
-        destination = scenario.get("destination", "İstanbul")
+        origin = scenario.get("origin", "Izmir")
+        destination = scenario.get("destination", "Istanbul")
         distance = scenario.get("total_distance_km", 600.0)
 
+        logger.log("orchestrator", "Scenario parameters:")
         logger.log("orchestrator",
-                    f"Senaryo parametreleri:")
+                    f"  🔋 Battery Age: {battery_age:.1%} "
+                    f"(0=New, 1=End-of-life)")
         logger.log("orchestrator",
-                    f"  🔋 Batarya Yaşı: {battery_age:.1%} "
-                    f"(0=Yeni, 1=Ömür sonu)")
+                    f"  🌡️  Ambient Temperature: {ambient_temp}°C")
         logger.log("orchestrator",
-                    f"  🌡️  Ortam Sıcaklığı: {ambient_temp}°C")
+                    f"  ⚡ Current SoC: {current_soc}%")
         logger.log("orchestrator",
-                    f"  ⚡ Anlık SoC: %{current_soc}")
-        logger.log("orchestrator",
-                    f"  📍 Rota: {origin} → {destination} ({distance} km)")
+                    f"  📍 Route: {origin} → {destination} ({distance} km)")
 
         # ══════════════════════════════════════════════════
-        # AŞAMA 1: Battery Guardian Agent
+        # PHASE 1: Battery Guardian Agent
         # ══════════════════════════════════════════════════
         logger.separator("─")
         logger.log("orchestrator",
-                    "AŞAMA 1/3: Battery Guardian Agent tetikleniyor...")
+                    "PHASE 1/3: Triggering Battery Guardian Agent...")
 
         guardian_result = self.battery_guardian.execute({
             "battery_age": battery_age,
@@ -146,11 +143,11 @@ class CrewOrchestrator:
         )
 
         # ══════════════════════════════════════════════════
-        # AŞAMA 2: Grid Tariff Agent
+        # PHASE 2: Grid Tariff Agent
         # ══════════════════════════════════════════════════
         logger.separator("─")
         logger.log("orchestrator",
-                    "AŞAMA 2/3: Grid Tariff Agent tetikleniyor...")
+                    "PHASE 2/3: Triggering Grid Tariff Agent...")
 
         max_soc = guardian_result["charge_parameters"]["max_charge_soc"]
 
@@ -165,7 +162,7 @@ class CrewOrchestrator:
             "current_soc": current_soc,
         })
 
-        # ── Grid → Trip: Mesaj gönder ──
+        # Grid → Trip: Send message
         self.grid_tariff.send_message(
             self.smart_trip,
             {
@@ -178,11 +175,11 @@ class CrewOrchestrator:
         )
 
         # ══════════════════════════════════════════════════
-        # AŞAMA 3: Smart Trip Agent
+        # PHASE 3: Smart Trip Agent
         # ══════════════════════════════════════════════════
         logger.separator("─")
         logger.log("orchestrator",
-                    "AŞAMA 3/3: Smart Trip Agent tetikleniyor...")
+                    "PHASE 3/3: Triggering Smart Trip Agent...")
 
         trip_result = self.smart_trip.execute({
             "origin": origin,
@@ -195,12 +192,12 @@ class CrewOrchestrator:
         })
 
         # ══════════════════════════════════════════════════
-        # BÜTÜNLEŞİK SONUÇ
+        # CONSOLIDATED RESULT
         # ══════════════════════════════════════════════════
         elapsed = time.time() - start_time
 
         logger.separator("═")
-        logger.header("📋 VOLTOPTIMIZER - BÜTÜNLEŞİK SONUÇ RAPORU")
+        logger.header("📋 VOLTOPTIMIZER - CONSOLIDATED RESULT REPORT")
 
         self._print_final_report(
             scenario_name, guardian_result, grid_result,
@@ -223,78 +220,76 @@ class CrewOrchestrator:
         trip: dict,
         elapsed: float,
     ):
-        """Nihai raporu terminale yazdırır."""
+        """Prints the final report to the terminal."""
         print()
         print("╔" + "═" * 68 + "╗")
-        print(f"║{'VoltOptimizer - Bütünleşik Sonuç Raporu':^68}║")
-        print(f"║{'Senaryo: ' + scenario_name:^68}║")
+        print(f"║{'VoltOptimizer - Consolidated Result Report':^68}║")
+        print(f"║{'Scenario: ' + scenario_name:^68}║")
         print("╠" + "═" * 68 + "╣")
 
-        # Batarya Güvenlik
+        # Battery Safety
         cp = guardian["charge_parameters"]
-        print(f"║ 🛡️  BATARYA GÜVENLİK DEĞERLENDİRMESİ"
-              f"{' ' * 29}║")
-        print(f"║   RUL Tahmini    : %{guardian['rul_assessment']['rul_percentage']:<44.1f}║")
-        print(f"║   Sağlık Durumu  : {guardian['rul_assessment']['health_status']:<46}║")
-        print(f"║   Sıcaklık       : {guardian['temperature']['current']:<40.1f}°C   ║")
-        print(f"║   Güvenlik Sev.  : {cp['safety_level']:<46}║")
-        print(f"║   Şarj Limiti    : %{cp['max_charge_soc']:<44.0f}║")
-        print(f"║   Maks Akım      : {cp['max_charge_current_a']:<43.0f}A   ║")
+        print(f"║ 🛡️  BATTERY SAFETY ASSESSMENT"
+              f"{' ' * 37}║")
+        print(f"║   RUL Estimate   : {guardian['rul_assessment']['rul_percentage']:<43.1f}%║")
+        print(f"║   Health Status  : {guardian['rul_assessment']['health_status']:<46}║")
+        print(f"║   Temperature    : {guardian['temperature']['current']:<40.1f}°C   ║")
+        print(f"║   Safety Level   : {cp['safety_level']:<46}║")
+        print(f"║   Charge Limit   : {cp['max_charge_soc']:<43.0f}%║")
+        print(f"║   Max Current    : {cp['max_charge_current_a']:<43.0f}A   ║")
 
         print("╠" + "═" * 68 + "╣")
 
-        # Enerji Fiyatları
+        # Energy Prices
         cc = grid.get("cost_comparison", {})
-        print(f"║ 💰 ENERJİ PİYASASI ANALİZİ"
-              f"{' ' * 40}║")
-        print(f"║   Optimal Maliyet : {cc.get('optimal_cost_tl', 0):<42.2f} TL  ║")
-        print(f"║   Peak Maliyeti   : {cc.get('peak_cost_tl', 0):<42.2f} TL  ║")
-        print(f"║   Tasarruf        : {cc.get('savings_tl', 0):<35.2f} TL (%{cc.get('savings_percentage', 0):.0f}) ║")
+        print(f"║ 💰 ENERGY MARKET ANALYSIS"
+              f"{' ' * 41}║")
+        print(f"║   Optimal Cost   : {cc.get('optimal_cost_tl', 0):<42.2f} TL  ║")
+        print(f"║   Peak Cost      : {cc.get('peak_cost_tl', 0):<42.2f} TL  ║")
+        print(f"║   Savings        : {cc.get('savings_tl', 0):<35.2f} TL ({cc.get('savings_percentage', 0):.0f}%) ║")
 
         print("╠" + "═" * 68 + "╣")
 
-        # Seyahat Planı
+        # Travel Plan
         ts = trip.get("trip_summary", {})
-        print(f"║ 🗺️  SEYAHAT PLANI"
-              f"{' ' * 49}║")
-        print(f"║   Toplam Mesafe   : {ts.get('total_distance_km', 0):<42.0f} km  ║")
-        print(f"║   Şarj Durakları  : {ts.get('total_charge_stops', 0):<46}║")
-        print(f"║   Şarj Süresi     : {ts.get('total_charge_time_min', 0):<42.0f} dk  ║")
-        print(f"║   Toplam Süre     : {ts.get('total_trip_time', 0):<40.1f} saat  ║")
-        print(f"║   Toplam Maliyet  : {ts.get('total_cost', 0):<42.2f} TL  ║")
-        print(f"║   Varış SoC       : %{ts.get('arrival_soc', 0):<44.1f}║")
+        print(f"║ 🗺️  TRAVEL PLAN"
+              f"{' ' * 51}║")
+        print(f"║   Total Distance : {ts.get('total_distance_km', 0):<42.0f} km  ║")
+        print(f"║   Charge Stops   : {ts.get('total_charge_stops', 0):<46}║")
+        print(f"║   Charge Time    : {ts.get('total_charge_time_min', 0):<42.0f} min ║")
+        print(f"║   Total Time     : {ts.get('total_trip_time', 0):<40.1f} hours ║")
+        print(f"║   Total Cost     : {ts.get('total_cost', 0):<42.2f} TL  ║")
+        print(f"║   Arrival SoC    : {ts.get('arrival_soc', 0):<43.1f}%║")
 
         print("╠" + "═" * 68 + "╣")
 
-        # Şarj Durakları
-        stops = trip.get("şarj_durakları", [])
+        # Charge Stops
+        stops = trip.get("charge_stops_detail", [])
         if stops:
-            print(f"║ ⚡ ŞARJ DURAKLARI"
-                  f"{' ' * 49}║")
+            print(f"║ ⚡ CHARGE STOPS"
+                  f"{' ' * 51}║")
             for stop in stops:
-                name = stop.get('istasyon', 'Bilinmiyor')
-                # İstasyon adını 40 karakterle sınırla
+                name = stop.get("station", "Unknown")
                 if len(name) > 40:
                     name = name[:37] + "..."
-                print(f"║   {stop['durak_no']}. {name:<63}║"[:71] + "║")
-                print(f"║      SoC: {stop['giriş_soc']} → {stop['çıkış_soc']} | "
-                      f"{stop['süre']} | {stop['güç_kw']} | "
-                      f"{stop['maliyet']:<10}      ║")
+                print(f"║   {stop['stop_number']}. {name:<63}║"[:71] + "║")
+                print(f"║      SoC: {stop['arrival_soc']} → {stop['departure_soc']} | "
+                      f"{stop['duration']} | {stop['power_kw']} | "
+                      f"{stop['cost']:<10}      ║")
 
             print("╠" + "═" * 68 + "╣")
 
-        # Güvenlik Aksiyonları
+        # Safety Actions
         actions = guardian.get("actions_taken", [])
         if actions:
-            print(f"║ 📋 ALINAN GÜVENLİK AKSİYONLARI"
-                  f"{' ' * 35}║")
+            print(f"║ 📋 SAFETY ACTIONS TAKEN"
+                  f"{' ' * 43}║")
             for action in actions[:5]:
-                # Her satırı 66 karakterle sınırla
                 text = action[:64]
                 print(f"║   {text:<65}║")
 
         print("╠" + "═" * 68 + "╣")
-        print(f"║ ⏱️  İşlem Süresi: {elapsed:.2f} saniye"
-              f"{' ' * (46 - len(f'{elapsed:.2f}'))}║")
+        print(f"║ ⏱️  Execution Time: {elapsed:.2f} seconds"
+              f"{' ' * (45 - len(f'{elapsed:.2f}'))}║")
         print("╚" + "═" * 68 + "╝")
         print()

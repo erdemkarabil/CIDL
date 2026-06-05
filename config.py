@@ -1,13 +1,13 @@
 """
-VoltOptimizer - Genel Konfigürasyon Dosyası
-============================================
-Tüm modüllerin paylaştığı sabit değerler ve hiper-parametreler burada tanımlanır.
+VoltOptimizer - Global Configuration File
+==========================================
+Constants and hyperparameters shared across all modules.
 """
 
 import os
 
 # ============================================================
-# Proje Dizinleri
+# Project Directories
 # ============================================================
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "outputs")
@@ -15,24 +15,24 @@ MODEL_DIR = os.path.join(OUTPUT_DIR, "models")
 PLOT_DIR = os.path.join(OUTPUT_DIR, "plots")
 LOG_DIR = os.path.join(OUTPUT_DIR, "logs")
 
-# Dizinleri oluştur
+# Create directories if they don't exist
 for d in [OUTPUT_DIR, MODEL_DIR, PLOT_DIR, LOG_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # ============================================================
-# Sentetik Veri Parametreleri
+# Synthetic Data Parameters
 # ============================================================
 DATA_CONFIG = {
-    "num_batteries": 50,          # Farklı batarya sayısı
-    "sequence_length": 100,       # Her bir zaman serisi penceresi uzunluğu
-    "num_features": 5,            # Voltaj, Akım, Sıcaklık, Hız, Eğim
-    "noise_std": 0.02,            # Gürültü standart sapması
-    "train_ratio": 0.8,           # Eğitim / test oranı
+    "num_batteries": 50,          # Number of simulated batteries
+    "sequence_length": 100,       # Length of each time-series window
+    "num_features": 5,            # Voltage, Current, Temperature, Speed, Slope
+    "noise_std": 0.02,            # Noise standard deviation
+    "train_ratio": 0.8,           # Train / test split ratio
     "random_seed": 42,
 }
 
 # ============================================================
-# Derin Öğrenme Model Hiper-Parametreleri
+# Deep Learning Model Hyperparameters
 # ============================================================
 MODEL_CONFIG = {
     # Two CNN stages: 32 filters capture low-level waveform shapes,
@@ -64,63 +64,63 @@ TRAIN_CONFIG = {
 }
 
 # ============================================================
-# Batarya Fiziksel Limitleri
+# Battery Physical Limits
 # ============================================================
 BATTERY_LIMITS = {
-    "max_voltage": 4.2,           # Volt
-    "min_voltage": 2.5,           # Volt
-    "nominal_voltage": 3.7,       # Volt
-    "max_current": 150.0,         # Amper
-    "max_temperature": 60.0,      # °C (Kritik üst limit)
-    "warning_temperature": 45.0,  # °C (Uyarı sıcaklığı)
+    "max_voltage": 4.2,           # Volts
+    "min_voltage": 2.5,           # Volts
+    "nominal_voltage": 3.7,       # Volts
+    "max_current": 150.0,         # Amperes
+    "max_temperature": 60.0,      # °C (Critical upper limit)
+    "warning_temperature": 45.0,  # °C (Warning threshold)
     "optimal_temperature": 25.0,  # °C
-    "max_charge_soc": 100.0,      # Şarj üst limiti (%)
-    "safe_charge_soc": 80.0,      # Güvenli şarj limiti (%)
+    "max_charge_soc": 100.0,      # Max charge limit (%)
+    "safe_charge_soc": 80.0,      # Safe charge limit (%)
     "min_soc": 10.0,              # Minimum SoC (%)
-    "critical_rul": 20.0,         # Kritik RUL (%)
-    "warning_rul": 40.0,          # Uyarı RUL (%)
+    "critical_rul": 20.0,         # Critical RUL threshold (%)
+    "warning_rul": 40.0,          # Warning RUL threshold (%)
 }
 
 # ============================================================
-# Şebeke Tarife Parametreleri (Simülasyon)
+# Grid Tariff Parameters (Simulation)
 # ============================================================
 GRID_CONFIG = {
     "currency": "TL",
-    "peak_hours": [(8, 12), (18, 22)],      # Yoğun saatler
-    "off_peak_hours": [(0, 8), (12, 18), (22, 24)],  # Sakin saatler
-    "peak_price_kwh": 4.50,                 # TL/kWh (Yoğun)
-    "off_peak_price_kwh": 1.80,             # TL/kWh (Sakin)
-    "super_off_peak_price_kwh": 0.90,       # TL/kWh (Gece süper sakin)
-    "super_off_peak_hours": [(1, 5)],       # Gece süper sakin saatler
+    "peak_hours": [(8, 12), (18, 22)],                    # Peak hours
+    "off_peak_hours": [(0, 8), (12, 18), (22, 24)],       # Off-peak hours
+    "peak_price_kwh": 4.50,                               # TL/kWh (Peak)
+    "off_peak_price_kwh": 1.80,                           # TL/kWh (Off-peak)
+    "super_off_peak_price_kwh": 0.90,                     # TL/kWh (Super off-peak)
+    "super_off_peak_hours": [(1, 5)],                     # Super off-peak hours
 }
 
 # ============================================================
-# Rota Planlama Parametreleri (Simülasyon)
+# Route Planning Parameters (Simulation)
 # ============================================================
 ROUTE_CONFIG = {
-    "ev_range_km": 400,                     # EV menzili (km)
-    "ev_consumption_kwh_per_km": 0.18,      # Enerji tüketimi (kWh/km)
-    "ev_battery_capacity_kwh": 75.0,        # Batarya kapasitesi (kWh)
-    "charge_speed_kw": {                    # Şarj hızları
+    "ev_range_km": 400,                     # EV range (km)
+    "ev_consumption_kwh_per_km": 0.18,      # Energy consumption (kWh/km)
+    "ev_battery_capacity_kwh": 75.0,        # Battery capacity (kWh)
+    "charge_speed_kw": {                    # Charging speeds
         "fast_dc": 150.0,
         "normal_dc": 50.0,
         "ac": 22.0,
     },
     "temperature_efficiency_factor": {
-        "cold": 0.75,    # <5°C → %25 verimlilik kaybı
+        "cold": 0.75,    # <5°C → 25% efficiency loss
         "cool": 0.90,    # 5-15°C
         "optimal": 1.00, # 15-30°C
         "warm": 0.95,    # 30-40°C
-        "hot": 0.80,     # >40°C → %20 verimlilik kaybı
+        "hot": 0.80,     # >40°C → 20% efficiency loss
     },
-    "elevation_factor_per_100m": 0.03,      # 100m yükselme → %3 ek tüketim
+    "elevation_factor_per_100m": 0.03,      # 100m climb → 3% extra consumption
 }
 
 # ============================================================
-# Ajan Ayarları
+# Agent Settings
 # ============================================================
 AGENT_CONFIG = {
     "verbose": True,
-    "max_reasoning_steps": 5,   # Maks. akıl yürütme adımı
+    "max_reasoning_steps": 5,   # Max reasoning steps
     "self_correction_enabled": True,
 }

@@ -1,16 +1,15 @@
 """
-VoltOptimizer - Temel Ajan Sınıfı (Base Agent)
-================================================
-Tüm ajanların miras aldığı temel sınıf. CrewAI benzeri bir mimari ile
-her ajan:
-  - Bir rol ve göreve sahiptir
-  - Tool'lar kullanabilir
-  - Akıl yürütme (reasoning) yapabilir
-  - Kendi kendini düzeltebilir (self-correction)
-  - Diğer ajanlarla mesaj alışverişi yapabilir
+VoltOptimizer - Base Agent Class
+=================================
+Base class inherited by all agents. Inspired by CrewAI architecture:
+  - Each agent has a role and a goal
+  - Can use tools
+  - Can reason (ReAct pattern)
+  - Can self-correct
+  - Can exchange messages with other agents
 
-Mimari Deseni: ReAct (Reasoning + Acting)
-    1. Gözlemle → 2. Düşün → 3. Eylem Yap → 4. Değerlendir → 5. Tekrarla
+Architecture Pattern: ReAct (Reasoning + Acting)
+    1. Observe → 2. Think → 3. Act → 4. Evaluate → 5. Repeat
 """
 
 import sys
@@ -22,13 +21,13 @@ from utils.logger import logger
 
 class BaseAgent:
     """
-    Tüm VoltOptimizer ajanlarının temel sınıfı.
+    Base class for all VoltOptimizer agents.
 
-    CrewAI framework'üne benzer bir yapı sunar:
-      - role: Ajanın rolü (örn: "Batarya Sağlık Koruyucusu")
-      - goal: Ajanın amacı
-      - backstory: Ajanın arka plan hikayesi
-      - tools: Kullanabileceği araçlar listesi
+    Provides a CrewAI-like interface:
+      - role: The agent's role (e.g. "Battery Health Guardian")
+      - goal: The agent's objective
+      - backstory: Background context for the agent
+      - tools: List of tools the agent can use
     """
 
     def __init__(
@@ -50,59 +49,54 @@ class BaseAgent:
             max_reasoning_steps or AGENT_CONFIG["max_reasoning_steps"]
         )
 
-        # Akıl yürütme geçmişi
         self.reasoning_history = []
-        # Mesaj kutusu (diğer ajanlardan gelen mesajlar)
         self.inbox = []
-        # Üretilen çıktılar
         self.outputs = {}
 
         if self.verbose:
-            logger.log("system",
-                       f"Ajan oluşturuldu: {self.role}")
+            logger.log("system", f"Agent created: {self.role}")
 
     def use_tool(self, tool_name: str, tool_instance, method: str,
                  **kwargs) -> dict:
         """
-        Bir aracı kullanır ve sonucunu döndürür.
+        Invokes a tool and returns its result.
 
         Args:
-            tool_name: Aracın görünen adı
-            tool_instance: Araç nesnesi
-            method: Çağrılacak metod adı
-            **kwargs: Metoda geçirilecek parametreler
+            tool_name: Display name of the tool
+            tool_instance: Tool object
+            method: Method name to call
+            **kwargs: Parameters to pass to the method
 
         Returns:
-            Araç çıktısı
+            Tool output
         """
         if self.verbose:
             logger.agent_action(self.role,
-                                f"'{tool_name}' aracı kullanılıyor → "
-                                f"{method}()")
+                                f"Using tool '{tool_name}' → {method}()")
 
         tool_method = getattr(tool_instance, method)
         result = tool_method(**kwargs)
 
         if self.verbose:
             logger.agent_action(self.role,
-                                f"'{tool_name}' aracından sonuç alındı ✓")
+                                f"Result received from '{tool_name}' ✓")
 
         return result
 
     def reason(self, observation: dict, step: int = 0) -> str:
         """
-        Gözleme dayalı akıl yürütme.
+        Reasoning based on an observation.
 
-        Alt sınıflar tarafından override edilir.
+        Overridden by subclasses.
 
         Args:
-            observation: Gözlem verisi
-            step: Akıl yürütme adımı
+            observation: Observation data
+            step: Reasoning step number
 
         Returns:
-            Akıl yürütme metni
+            Reasoning text
         """
-        thought = f"Gözlem alındı, analiz ediliyor..."
+        thought = "Observation received, analysing..."
         self.reasoning_history.append({
             "step": step,
             "observation": observation,
@@ -114,25 +108,24 @@ class BaseAgent:
 
         return thought
 
-    def self_correct(self, previous_output: dict,
-                     feedback: str) -> dict:
+    def self_correct(self, previous_output: dict, feedback: str) -> dict:
         """
-        Kendi kendini düzeltme mekanizması.
+        Self-correction mechanism.
 
-        Önceki çıktıyı ve geri bildirimi değerlendirerek
-        düzeltilmiş bir çıktı üretir.
+        Re-evaluates the previous output against the feedback
+        and produces a corrected output.
 
         Args:
-            previous_output: Önceki çıktı
-            feedback: Geri bildirim
+            previous_output: Previous output
+            feedback: Feedback text
 
         Returns:
-            Düzeltilmiş çıktı
+            Corrected output
         """
         if self.verbose:
             logger.agent_thinking(
                 self.role,
-                f"Kendini düzeltme aktif: {feedback}"
+                f"Self-correction active: {feedback}"
             )
 
         corrected = previous_output.copy()
@@ -143,11 +136,11 @@ class BaseAgent:
 
     def receive_message(self, from_agent: str, message: dict):
         """
-        Başka bir ajandan mesaj alır.
+        Receives a message from another agent.
 
         Args:
-            from_agent: Gönderen ajan adı
-            message: Mesaj içeriği
+            from_agent: Sender agent name
+            message: Message content
         """
         self.inbox.append({
             "from": from_agent,
@@ -156,39 +149,39 @@ class BaseAgent:
 
         if self.verbose:
             logger.log("system",
-                       f"[{self.role}] ← Mesaj alındı: [{from_agent}]")
+                       f"[{self.role}] ← Message received from: [{from_agent}]")
 
     def send_message(self, to_agent, message: dict):
         """
-        Başka bir ajana mesaj gönderir.
+        Sends a message to another agent.
 
         Args:
-            to_agent: Hedef ajan nesnesi
-            message: Mesaj içeriği
+            to_agent: Target agent object
+            message: Message content
         """
         if self.verbose:
             logger.log("system",
-                       f"[{self.role}] → Mesaj gönderiliyor: [{to_agent.role}]")
+                       f"[{self.role}] → Sending message to: [{to_agent.role}]")
 
         to_agent.receive_message(self.role, message)
 
     def execute(self, task_input: dict) -> dict:
         """
-        Ana görev yürütme fonksiyonu.
-        Alt sınıflar tarafından override edilir.
+        Main task execution method.
+        Overridden by subclasses.
 
         Args:
-            task_input: Görev girdisi
+            task_input: Task input data
 
         Returns:
-            Görev çıktısı
+            Task output
         """
         raise NotImplementedError(
-            "execute() metodu alt sınıfta tanımlanmalıdır"
+            "execute() must be implemented in a subclass"
         )
 
     def get_summary(self) -> dict:
-        """Ajan özetini döndürür."""
+        """Returns a summary of the agent."""
         return {
             "role": self.role,
             "goal": self.goal,

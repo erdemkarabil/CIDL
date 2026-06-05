@@ -1,15 +1,15 @@
 """
-VoltOptimizer - Şebeke Tarife API Aracı (Simülasyon)
-=====================================================
-Elektrik şebekesinin dinamik fiyat tarifelerini simüle eden bir Web/API
-aracı. Grid Tariff Agent bu aracı kullanarak en ucuz ve en optimize
-şarj saat aralıklarını belirler.
+VoltOptimizer - Grid Tariff API Tool (Simulation)
+==================================================
+Simulates the dynamic pricing tariffs of the electricity grid.
+Grid Tariff Agent uses this tool to identify the cheapest and most
+optimal charging time windows.
 
-Simülasyon Özellikleri:
-    - Gerçekçi Türkiye elektrik tarifeleri
-    - Peak / Off-Peak / Super Off-Peak saat dilimleri
-    - Mevsimsel fiyat varyasyonu
-    - Anlık talep bazlı fiyat dalgalanması
+Simulation Features:
+    - Realistic Turkish electricity tariffs
+    - Peak / Off-Peak / Super Off-Peak time slots
+    - Seasonal price variation
+    - Instantaneous demand-based price fluctuation
 """
 
 import datetime
@@ -24,22 +24,22 @@ from utils.logger import logger
 
 class GridTariffAPITool:
     """
-    Simüle edilmiş Elektrik Şebeke Tarife API'si.
+    Simulated Electricity Grid Tariff API.
 
-    Gerçek dünya API'sine benzer bir arayüz sunarak ajanların
-    şebeke fiyatlarını sorgulamasını sağlar.
+    Provides an interface similar to a real-world API, allowing agents
+    to query grid prices.
     """
 
     def __init__(self):
         self.config = GRID_CONFIG
-        logger.log("tool", "GridTariffAPITool başlatıldı (Simülasyon modu)")
+        logger.log("tool", "GridTariffAPITool initialised (Simulation mode)")
 
     def _get_price_for_hour(self, hour: int) -> dict:
         """
-        Verilen saat için elektrik fiyatını döndürür.
+        Returns the electricity price for a given hour.
 
         Args:
-            hour: Saat (0-23)
+            hour: Hour (0-23)
 
         Returns:
             {"hour": int, "price_kwh": float, "tariff_type": str}
@@ -53,11 +53,11 @@ class GridTariffAPITool:
                 return {
                     "hour": hour,
                     "price_kwh": round(price, 2),
-                    "tariff_type": "SÜPER_SAKİN",
-                    "demand_level": "Çok Düşük",
+                    "tariff_type": "SUPER_OFF_PEAK",
+                    "demand_level": "Very Low",
                 }
 
-        # Yoğun saatler
+        # Peak hours
         for start, end in self.config["peak_hours"]:
             if start <= hour < end:
                 base_price = self.config["peak_price_kwh"]
@@ -65,23 +65,23 @@ class GridTariffAPITool:
                 return {
                     "hour": hour,
                     "price_kwh": round(price, 2),
-                    "tariff_type": "YOĞUN",
-                    "demand_level": "Yüksek",
+                    "tariff_type": "PEAK",
+                    "demand_level": "High",
                 }
 
-        # Sakin saatler (varsayılan)
+        # Off-peak hours (default)
         base_price = self.config["off_peak_price_kwh"]
         price = base_price * (1 + np.random.uniform(-0.05, 0.05))
         return {
             "hour": hour,
             "price_kwh": round(price, 2),
-            "tariff_type": "SAKİN",
-            "demand_level": "Orta",
+            "tariff_type": "OFF_PEAK",
+            "demand_level": "Medium",
         }
 
     def get_24h_tariff_schedule(self) -> dict:
         """
-        24 saatlik tarife çizelgesini döndürür.
+        Returns the 24-hour tariff schedule.
 
         Returns:
             {
@@ -92,25 +92,24 @@ class GridTariffAPITool:
                 "most_expensive_window": {"start": int, "end": int, ...},
             }
         """
-        logger.log("tool", "GridTariffAPITool: 24 saatlik tarife sorgulanıyor...")
+        logger.log("tool", "GridTariffAPITool: Querying 24-hour tariff schedule...")
 
         schedule = []
         for h in range(24):
             schedule.append(self._get_price_for_hour(h))
 
-        # En ucuz ve en pahalı pencereleri bul
         prices = [s["price_kwh"] for s in schedule]
 
-        # En ucuz ardışık 3 saatlik pencereyi bul
+        # Find cheapest consecutive 3-hour window
         best_cost = float("inf")
         best_start = 0
-        for i in range(22):  # 3 saatlik pencere
+        for i in range(22):
             window_cost = sum(prices[i:i + 3])
             if window_cost < best_cost:
                 best_cost = window_cost
                 best_start = i
 
-        # En pahalı ardışık 3 saatlik pencereyi bul
+        # Find most expensive consecutive 3-hour window
         worst_cost = 0
         worst_start = 0
         for i in range(22):
@@ -141,7 +140,7 @@ class GridTariffAPITool:
         }
 
         logger.log("tool",
-                    f"Tarife alındı → En ucuz: "
+                    f"Tariff received → Cheapest: "
                     f"{best_start}:00-{best_start + 3}:00 "
                     f"({result['cheapest_window']['avg_price_kwh']} "
                     f"{self.config['currency']}/kWh)")
@@ -155,24 +154,24 @@ class GridTariffAPITool:
         max_windows: int = 3,
     ) -> list:
         """
-        Belirli bir enerji ihtiyacı için en uygun şarj pencerelerini önerir.
+        Recommends the most suitable charge windows for a given energy need.
 
         Args:
-            required_kwh: Gerekli enerji miktarı (kWh)
-            charge_power_kw: Şarj gücü (kW)
-            max_windows: Maksimum pencere sayısı
+            required_kwh: Required energy amount (kWh)
+            charge_power_kw: Charge power (kW)
+            max_windows: Maximum number of windows
 
         Returns:
             [{start_hour, end_hour, price_kwh, estimated_cost, ...}]
         """
         logger.log("tool",
-                    f"Optimal şarj penceresi hesaplanıyor: "
+                    f"Calculating optimal charge windows: "
                     f"{required_kwh:.1f} kWh, {charge_power_kw:.0f} kW")
 
         charge_hours_needed = required_kwh / charge_power_kw
         schedule = self.get_24h_tariff_schedule()
 
-        # Saatleri fiyata göre sırala
+        # Sort hours by price
         sorted_hours = sorted(schedule["schedule"],
                               key=lambda x: x["price_kwh"])
 
@@ -198,10 +197,10 @@ class GridTariffAPITool:
             remaining_kwh -= energy_this_hour
             total_cost += cost_this_hour
 
-        # Saate göre sırala
+        # Sort by hour
         windows.sort(key=lambda x: x["hour"])
 
-        # Ardışık saatleri birleştir
+        # Merge consecutive hours
         merged = []
         for w in windows:
             if (merged and
@@ -223,9 +222,9 @@ class GridTariffAPITool:
                 })
 
         logger.log("tool",
-                    f"Optimal şarj planı hazır → "
-                    f"{len(merged)} pencere, "
-                    f"toplam maliyet: {total_cost:.2f} TL")
+                    f"Optimal charge plan ready → "
+                    f"{len(merged)} windows, "
+                    f"total cost: {total_cost:.2f} TL")
 
         return merged[:max_windows]
 
@@ -235,11 +234,11 @@ class GridTariffAPITool:
         start_hour: int,
     ) -> dict:
         """
-        Belirli bir saatte şarj maliyetini hesaplar.
+        Calculates the charge cost at a given hour.
 
         Args:
-            energy_kwh: Şarj edilecek enerji (kWh)
-            start_hour: Başlangıç saati
+            energy_kwh: Energy to charge (kWh)
+            start_hour: Start hour
 
         Returns:
             {"cost_tl": float, "price_kwh": float, "tariff_type": str}
