@@ -34,7 +34,7 @@ python main.py --training-only      # DL model training only
 
 ## Report
 
-Detailed project report: [Report_patched.docx](Report_patched.docx)
+Detailed project report: [Report.pdf](Report.pdf) · [Report.docx](Report.docx)
 
 ## Demo
 
